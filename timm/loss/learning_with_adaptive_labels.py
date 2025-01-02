@@ -21,21 +21,21 @@ def pairwise_dist(A, B):
 
 
 def compute_centroids(z, in_y, num_classes=10):
-    print('24 ENTERING compute_centroids')
-    print('z', z.shape)
-    print('in_y', in_y.shape)
+    # print('24 ENTERING compute_centroids')
+    # print('z', z.shape)
+    # print('in_y', in_y.shape)
     true_y = torch.argmax(in_y, dim=1)
-    print('true_y', true_y.shape)
+    # print('true_y', true_y.shape)
     class_mask = torch.nn.functional.one_hot(true_y, num_classes=num_classes).float()
-    print('class_mask', class_mask.shape)
+    # print('class_mask', class_mask.shape)
     sum_z = torch.matmul(class_mask.T, z)
-    print('sum_z', sum_z.shape)
+    # print('sum_z', sum_z.shape)
     count_per_class = class_mask.sum(dim=0)
-    print('count_per_class', count_per_class.shape)
+    # print('count_per_class', count_per_class.shape)
     count_per_class = torch.clamp(count_per_class, min=1e-12)
-    print('count_per_class', count_per_class.shape)
+    # print('count_per_class', count_per_class.shape)
     centroids = sum_z / count_per_class.unsqueeze(1)
-    print('centroids', centroids.shape)
+    # print('centroids', centroids.shape)
     # Crop out the 
     return centroids
 
@@ -44,13 +44,13 @@ def update_learnt_centroids(learnt_y, centroids, decay_factor=1.0):
     # Extract latent dimensions and number of classes
     latent_dim = learnt_y.shape[1]
     num_classes = learnt_y.shape[0]
-    print('44 ENTERING update_learnt_centroids')
+    # print('44 ENTERING update_learnt_centroids')
 
-    print('learnt_y', learnt_y.shape)
-    print('centroids', centroids.shape)
+    # print('learnt_y', learnt_y.shape)
+    # print('centroids', centroids.shape)
     # Create a mask to check if rows in centroids are all zeros
     nonzero_mask = torch.any(centroids != 0, dim=1)
-    print('nonzero_mask', nonzero_mask.shape)
+    # print('nonzero_mask', nonzero_mask.shape)
 
     # Use the mask to update centroids: replace zero rows with corresponding rows from learnt_y
     updated_centroids = torch.where(
@@ -158,7 +158,7 @@ class LearningWithAdaptiveLabels(nn.Module):
             # sum_classes: bool = False,
             # pos_weight: Optional[Union[torch.Tensor, float]] = None,
     ):
-        print('TRACE: Initializing LWAL')
+        # print('TRACE: Initializing LWAL')
         super(LearningWithAdaptiveLabels, self).__init__()
         self.latent_dim = latent_dim
         self.num_classes = num_classes
@@ -179,9 +179,9 @@ class LearningWithAdaptiveLabels(nn.Module):
         # self.register_buffer('pos_weight', pos_weight)
 
     def forward(self, x: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
-        print('TRACE: Entering LWAL.forward()')
-        print('x', x.shape)
-        print('target', target.shape)
+        # print('TRACE: Entering LWAL.forward()')
+        # print('x', x.shape)
+        # print('target', target.shape)
         batch_size = x.shape[0]
         assert batch_size == target.shape[0]
 
@@ -201,8 +201,8 @@ class LearningWithAdaptiveLabels(nn.Module):
         #     # Make target 0, or 1 if threshold set
         #     target = target.gt(self.target_threshold).to(dtype=target.dtype)
 
-        print('x/z', x.shape)
-        print('target/in_y', target.shape)
+        # print('x/z', x.shape)
+        # print('target/in_y', target.shape)
 
         # lwal loss is 10 * structure_loss + input_loss
         z = x.clone()
@@ -226,5 +226,5 @@ class LearningWithAdaptiveLabels(nn.Module):
         # if self.sum_classes:
         #     loss = loss.sum(-1).mean()
         
-        print('TRACE: leaving LWAL.forward()', em_loss)
+        # print('TRACE: leaving LWAL.forward()', em_loss)
         return em_loss
