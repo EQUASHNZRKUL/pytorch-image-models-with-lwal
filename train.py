@@ -15,7 +15,6 @@ NVIDIA CUDA specific speedups adopted from NVIDIA Apex examples
 Hacked together by / Copyright 2020 Ross Wightman (https://github.com/rwightman)
 """
 import argparse
-import copy
 import importlib
 import json
 import logging
@@ -36,6 +35,7 @@ from timm import utils
 from timm.data import create_dataset, create_loader, resolve_data_config, Mixup, FastCollateMixup, AugMixDataset
 from timm.layers import convert_splitbn_model, convert_sync_batchnorm, set_fast_norm
 from timm.loss import JsdCrossEntropy, SoftTargetCrossEntropy, BinaryCrossEntropy, LabelSmoothingCrossEntropy
+from timm.loss.learning_with_adaptive_labels import LearningWithAdaptiveLabels
 from timm.models import create_model, safe_model_name, resume_checkpoint, load_checkpoint, model_parameters
 from timm.optim import create_optimizer_v2, optimizer_kwargs
 from timm.scheduler import create_scheduler_v2, scheduler_kwargs
@@ -49,6 +49,12 @@ try:
 except ImportError:
     has_apex = False
 
+has_native_amp = False
+try:
+    if getattr(torch.cuda.amp, 'autocast') is not None:
+        has_native_amp = True
+except AttributeError:
+    pass
 
 try:
     import wandb
@@ -103,8 +109,6 @@ group.add_argument('--input-key', default=None, type=str,
                    help='Dataset key for input images.')
 group.add_argument('--target-key', default=None, type=str,
                    help='Dataset key for target labels.')
-group.add_argument('--dataset-trust-remote-code', action='store_true', default=False,
-                   help='Allow huggingface dataset import to execute code downloaded from the dataset\'s repo.')
 
 # Model parameters
 group = parser.add_argument_group('Model parameters')
@@ -121,6 +125,8 @@ group.add_argument('--resume', default='', type=str, metavar='PATH',
 group.add_argument('--no-resume-opt', action='store_true', default=False,
                    help='prevent resume of optimizer state when resuming model')
 group.add_argument('--num-classes', type=int, default=None, metavar='N',
+                   help='number of label classes (Model default if None)')
+group.add_argument('--latent-dim', type=int, default=None, metavar='N',
                    help='number of label classes (Model default if None)')
 group.add_argument('--gp', default=None, type=str, metavar='POOL',
                    help='Global pool type, one of (fast, avg, max, avgmax, avgmaxc). Model default if None.')
@@ -158,8 +164,6 @@ group.add_argument('--head-init-scale', default=None, type=float,
                    help='Head initialization scale')
 group.add_argument('--head-init-bias', default=None, type=float,
                    help='Head initialization bias value')
-group.add_argument('--torchcompile-mode', type=str, default=None,
-                    help="torch.compile mode (default: None).")
 
 # scripting / codegen
 scripting_group = group.add_mutually_exclusive_group()
@@ -297,6 +301,10 @@ group.add_argument('--bce-target-thresh', type=float, default=None,
                    help='Threshold for binarizing softened BCE targets (default: None, disabled).')
 group.add_argument('--bce-pos-weight', type=float, default=None,
                    help='Positive weighting for BCE loss.')
+group.add_argument('--lwal-loss', action='store_true', default=False,
+                   help='Enable Lwal Loss. Use with `--stationary-steps`.')
+group.add_argument('--stationary-steps', type=int, default=1,
+                   help='Number of steps between Lwal updates.')
 group.add_argument('--reprob', type=float, default=0., metavar='PCT',
                    help='Random erase prob (default: 0.)')
 group.add_argument('--remode', type=str, default='pixel',
@@ -371,7 +379,7 @@ group.add_argument('--checkpoint-hist', type=int, default=10, metavar='N',
 group.add_argument('-j', '--workers', type=int, default=4, metavar='N',
                    help='how many training processes to use (default: 4)')
 group.add_argument('--save-images', action='store_true', default=False,
-                   help='save images of input batches every log interval for debugging')
+                   help='save images of input bathes every log interval for debugging')
 group.add_argument('--pin-mem', action='store_true', default=False,
                    help='Pin CPU memory in DataLoader for more efficient (sometimes) transfer to GPU.')
 group.add_argument('--no-prefetcher', action='store_true', default=False,
@@ -388,10 +396,6 @@ group.add_argument('--use-multi-epochs-loader', action='store_true', default=Fal
                    help='use the multi-epochs-loader to save time at the beginning of every epoch')
 group.add_argument('--log-wandb', action='store_true', default=False,
                    help='log training and validation metrics to wandb')
-group.add_argument('--wandb-tags', default=[], type=str, nargs='+',
-                   help='wandb tags')
-group.add_argument('--wandb-resume-id', default='', type=str, metavar='ID',
-                   help='If resuming a run, the id of the run in wandb')
 
 
 def _parse_args():
@@ -443,6 +447,7 @@ def main():
             use_amp = 'apex'
             assert args.amp_dtype == 'float16'
         else:
+            assert has_native_amp, 'Please update PyTorch to a version with native AMP (or use APEX).'
             use_amp = 'native'
             assert args.amp_dtype in ('float16', 'bfloat16')
         if args.amp_dtype == 'bfloat16':
@@ -469,11 +474,14 @@ def main():
             num_classes=-1,  # force head adaptation
         )
 
+    # if args.latent_dim is not None:
+    #     args.num_classes = args.latent_dim
+
     model = create_model(
         args.model,
         pretrained=args.pretrained,
         in_chans=in_chans,
-        num_classes=args.num_classes,
+        num_classes=args.num_classes if args.latent_dim is None else args.latent_dim,
         drop_rate=args.drop,
         drop_path_rate=args.drop_path,
         drop_block_rate=args.drop_block,
@@ -492,6 +500,8 @@ def main():
     if args.head_init_bias is not None:
         nn.init.constant_(model.get_classifier().bias, args.head_init_bias)
 
+    # print('498: args.num_classes', args.num_classes)
+    # print('499: model.num_classes', model.num_classes)
     if args.num_classes is None:
         assert hasattr(model, 'num_classes'), 'Model must have `num_classes` attr if not set on cmd line/config.'
         args.num_classes = model.num_classes  # FIXME handle model default vs config num_classes more elegantly
@@ -561,13 +571,6 @@ def main():
         **optimizer_kwargs(cfg=args),
         **args.opt_kwargs,
     )
-    if utils.is_primary(args):
-        defaults = copy.deepcopy(optimizer.defaults)
-        defaults['weight_decay'] = args.weight_decay  # this isn't stored in optimizer.defaults
-        defaults = ', '.join([f'{k}: {v}' for k, v in defaults.items()])
-        logging.info(
-            f'Created {type(optimizer).__name__} ({args.opt}) optimizer: {defaults}'
-        )
 
     # setup automatic mixed-precision (AMP) loss scaling and op casting
     amp_autocast = suppress  # do nothing
@@ -579,10 +582,15 @@ def main():
         if utils.is_primary(args):
             _logger.info('Using NVIDIA APEX AMP. Training in mixed precision.')
     elif use_amp == 'native':
-        amp_autocast = partial(torch.autocast, device_type=device.type, dtype=amp_dtype)
-        if device.type in ('cuda',) and amp_dtype == torch.float16:
+        try:
+            amp_autocast = partial(torch.autocast, device_type=device.type, dtype=amp_dtype)
+        except (AttributeError, TypeError):
+            # fallback to CUDA only AMP for PyTorch < 1.10
+            assert device.type == 'cuda'
+            amp_autocast = torch.cuda.amp.autocast
+        if device.type == 'cuda' and amp_dtype == torch.float16:
             # loss scaler only used for float16 (half) dtype, bfloat16 does not need it
-            loss_scaler = NativeScaler(device=device.type)
+            loss_scaler = NativeScaler()
         if utils.is_primary(args):
             _logger.info('Using native Torch AMP. Training in mixed precision.')
     else:
@@ -631,7 +639,7 @@ def main():
     if args.torchcompile:
         # torch compile should be done after DDP
         assert has_compile, 'A version of torch w/ torch.compile() is required for --compile, possibly a nightly.'
-        model = torch.compile(model, backend=args.torchcompile, mode=args.torchcompile_mode)
+        model = torch.compile(model, backend=args.torchcompile)
 
     # create the train and eval datasets
     if args.data and not args.data_dir:
@@ -655,8 +663,13 @@ def main():
         input_key=args.input_key,
         target_key=args.target_key,
         num_samples=args.train_num_samples,
-        trust_remote_code=args.dataset_trust_remote_code,
     )
+
+    max_y = 0
+    for x, y in dataset_train:
+        if max_y < y: 
+            max_y = y
+    # print('672', max_y)
 
     if args.val_split:
         dataset_eval = create_dataset(
@@ -671,7 +684,6 @@ def main():
             input_key=args.input_key,
             target_key=args.target_key,
             num_samples=args.val_num_samples,
-            trust_remote_code=args.dataset_trust_remote_code,
         )
 
     # setup mixup / cutmix
@@ -698,6 +710,12 @@ def main():
     # wrap dataset in AugMix helper
     if num_aug_splits > 1:
         dataset_train = AugMixDataset(dataset_train, num_splits=num_aug_splits)
+
+    max_y = 0
+    for x, y in dataset_train:
+        if max_y < y: 
+            max_y = y
+    # print('718', max_y)
 
     # create data loaders w/ augmentation pipeline
     train_interpolation = args.train_interpolation
@@ -737,6 +755,11 @@ def main():
         use_multi_epochs_loader=args.use_multi_epochs_loader,
         worker_seeding=args.worker_seeding,
     )
+    for x, y in loader_train:
+        # print('759: x', x.shape)
+        # print('760: target', y.shape)
+        # print('761: y', y)
+        break
 
     loader_eval = None
     if args.val_split:
@@ -761,7 +784,18 @@ def main():
         )
 
     # setup loss function
-    if args.jsd_loss:
+    if args.lwal_loss:
+        train_loss_fn = LearningWithAdaptiveLabels(
+            latent_dim=args.latent_dim,
+            num_classes=args.num_classes,
+            stationary_steps=args.stationary_steps,
+            current_step=0,
+            # BCE params
+            # target_threshold=args.bce_target_thresh,
+            # sum_classes=args.bce_sum,
+            # pos_weight=args.bce_pos_weight,
+        )
+    elif args.jsd_loss:
         assert num_aug_splits > 1  # JSD only valid with aug splits set
         train_loss_fn = JsdCrossEntropy(num_splits=num_aug_splits, smoothing=args.smoothing)
     elif mixup_active:
@@ -822,10 +856,7 @@ def main():
 
     if utils.is_primary(args) and args.log_wandb:
         if has_wandb:
-            assert not args.wandb_resume_id or args.resume
-            wandb.init(project=args.experiment, config=args, tags=args.wandb_tags,
-                       resume='must' if args.wandb_resume_id else None,
-                       id=args.wandb_resume_id if args.wandb_resume_id else None)
+            wandb.init(project=args.experiment, config=args)
         else:
             _logger.warning(
                 "You've requested to log metrics to wandb but package not found. "
@@ -851,13 +882,8 @@ def main():
             lr_scheduler.step(start_epoch)
 
     if utils.is_primary(args):
-        if args.warmup_prefix:
-            sched_explain = '(warmup_epochs + epochs + cooldown_epochs). Warmup added to total when warmup_prefix=True'
-        else:
-            sched_explain = '(epochs + cooldown_epochs). Warmup within epochs when warmup_prefix=False'
         _logger.info(
-            f'Scheduled epochs: {num_epochs} {sched_explain}. '
-            f'LR stepped per {"epoch" if lr_scheduler.t_in_epochs else "update"}.')
+            f'Scheduled epochs: {num_epochs}. LR stepped per {"epoch" if lr_scheduler.t_in_epochs else "update"}.')
 
     results = []
     try:
@@ -874,6 +900,7 @@ def main():
                 optimizer,
                 train_loss_fn,
                 args,
+                device=device,
                 lr_scheduler=lr_scheduler,
                 saver=saver,
                 output_dir=output_dir,
@@ -941,29 +968,20 @@ def main():
                 # step LR for next epoch
                 lr_scheduler.step(epoch + 1, latest_metric)
 
-            latest_results = {
+            results.append({
                 'epoch': epoch,
                 'train': train_metrics,
-            }
-            if eval_metrics is not None:
-                latest_results['validation'] = eval_metrics
-            results.append(latest_results)
+                'validation': eval_metrics,
+            })
 
     except KeyboardInterrupt:
         pass
 
+    results = {'all': results}
     if best_metric is not None:
-        # log best metric as tracked by checkpoint saver
+        results['best'] = results['all'][best_epoch - start_epoch]
         _logger.info('*** Best metric: {0} (epoch {1})'.format(best_metric, best_epoch))
-
-    if utils.is_primary(args):
-        # for parsable results display, dump top-10 summaries to avoid excess console spam
-        display_results = sorted(
-            results,
-            key=lambda x: x.get('validation', x.get('train')).get(eval_metric, 0),
-            reverse=decreasing_metric,
-        )
-        print(f'--result\n{json.dumps(display_results[-10:], indent=4)}')
+    print(f'--result\n{json.dumps(results, indent=4)}')
 
 
 def train_one_epoch(
@@ -1008,6 +1026,8 @@ def train_one_epoch(
     optimizer.zero_grad()
     update_sample_count = 0
     for batch_idx, (input, target) in enumerate(loader):
+        # print('1013 input', input.shape)
+        # print('1014 input', target.shape)
         last_batch = batch_idx == last_batch_idx
         need_update = last_batch or (batch_idx + 1) % accum_steps == 0
         update_idx = batch_idx // accum_steps
@@ -1025,8 +1045,10 @@ def train_one_epoch(
         data_time_m.update(accum_steps * (time.time() - data_start_time))
 
         def _forward():
-            with amp_autocast():
+            # print(1022, device.type)
+            with amp_autocast(device_type=device.type, dtype=torch.bfloat16):
                 output = model(input)
+                # print('1024: output', output.shape)
                 loss = loss_fn(output, target)
             if accum_steps > 1:
                 loss /= accum_steps
@@ -1034,6 +1056,7 @@ def train_one_epoch(
 
         def _backward(_loss):
             if loss_scaler is not None:
+                # print('1059')
                 loss_scaler(
                     _loss,
                     optimizer,
@@ -1044,7 +1067,9 @@ def train_one_epoch(
                     need_update=need_update,
                 )
             else:
+                # print('TRACE: ENTERING backward()')
                 _loss.backward(create_graph=second_order)
+                # print('TRACE: EXITING backward()')
                 if need_update:
                     if args.clip_grad is not None:
                         utils.dispatch_clip_grad(
@@ -1062,7 +1087,8 @@ def train_one_epoch(
             loss = _forward()
             _backward(loss)
 
-        losses_m.update(loss.item() * accum_steps, input.size(0))
+        if not args.distributed:
+            losses_m.update(loss.item() * accum_steps, input.size(0))
         update_sample_count += input.size(0)
 
         if not need_update:
@@ -1074,11 +1100,8 @@ def train_one_epoch(
         if model_ema is not None:
             model_ema.update(model, step=num_updates)
 
-        if args.synchronize_step:
-            if device.type == 'cuda':
-                torch.cuda.synchronize()
-            elif device.type == 'npu':
-                torch.npu.synchronize()
+        if args.synchronize_step and device.type == 'cuda':
+            torch.cuda.synchronize()
         time_now = time.time()
         update_time_m.update(time.time() - update_start_time)
         update_start_time = time_now
@@ -1087,18 +1110,16 @@ def train_one_epoch(
             lrl = [param_group['lr'] for param_group in optimizer.param_groups]
             lr = sum(lrl) / len(lrl)
 
-            loss_avg, loss_now = losses_m.avg, losses_m.val
             if args.distributed:
-                # synchronize current step and avg loss, each process keeps its own running avg
-                loss_avg = utils.reduce_tensor(loss.new([loss_avg]), args.world_size).item()
-                loss_now = utils.reduce_tensor(loss.new([loss_now]), args.world_size).item()
+                reduced_loss = utils.reduce_tensor(loss.data, args.world_size)
+                losses_m.update(reduced_loss.item() * accum_steps, input.size(0))
                 update_sample_count *= args.world_size
 
             if utils.is_primary(args):
                 _logger.info(
                     f'Train: {epoch} [{update_idx:>4d}/{updates_per_epoch} '
                     f'({100. * (update_idx + 1) / updates_per_epoch:>3.0f}%)]  '
-                    f'Loss: {loss_now:#.3g} ({loss_avg:#.3g})  '
+                    f'Loss: {losses_m.val:#.3g} ({losses_m.avg:#.3g})  '
                     f'Time: {update_time_m.val:.3f}s, {update_sample_count / update_time_m.val:>7.2f}/s  '
                     f'({update_time_m.avg:.3f}s, {update_sample_count / update_time_m.avg:>7.2f}/s)  '
                     f'LR: {lr:.3e}  '
@@ -1127,12 +1148,7 @@ def train_one_epoch(
     if hasattr(optimizer, 'sync_lookahead'):
         optimizer.sync_lookahead()
 
-    loss_avg = losses_m.avg
-    if args.distributed:
-        # synchronize avg loss, each process keeps its own running avg
-        loss_avg = torch.tensor([loss_avg], device=device, dtype=torch.float32)
-        loss_avg = utils.reduce_tensor(loss_avg, args.world_size).item()
-    return OrderedDict([('loss', loss_avg)])
+    return OrderedDict([('loss', losses_m.avg)])
 
 
 def validate(
@@ -1185,8 +1201,6 @@ def validate(
 
             if device.type == 'cuda':
                 torch.cuda.synchronize()
-            elif device.type == "npu":
-                torch.npu.synchronize()
 
             losses_m.update(reduced_loss.item(), input.size(0))
             top1_m.update(acc1.item(), output.size(0))
