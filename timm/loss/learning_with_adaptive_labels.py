@@ -40,23 +40,19 @@ def compute_centroids(z, in_y, num_classes=10):
     return centroids
 
 
-def update_learnt_centroids(learnt_y, centroids, decay_factor=1.0):
+def update_learnt_centroids(learnt_y, centroids, device, decay_factor=1.0):
     # Extract latent dimensions and number of classes
     latent_dim = learnt_y.shape[1]
     num_classes = learnt_y.shape[0]
-    # print('44 ENTERING update_learnt_centroids')
-
-    # print('learnt_y', learnt_y.shape)
-    # print('centroids', centroids.shape)
     # Create a mask to check if rows in centroids are all zeros
-    nonzero_mask = torch.any(centroids != 0, dim=1)
-    # print('nonzero_mask', nonzero_mask.shape)
+    nonzero_mask = torch.any(centroids != 0, dim=1, device=device)
 
     # Use the mask to update centroids: replace zero rows with corresponding rows from learnt_y
     updated_centroids = torch.where(
         nonzero_mask.unsqueeze(1),  # Expand mask to match the second dimension
         centroids,
-        learnt_y
+        learnt_y,
+        device=device
     )
 
     # Apply decay factor to blend centroids with learnt_y
@@ -171,12 +167,14 @@ class LearningWithAdaptiveLabels(nn.Module):
 
         # lwal loss is 10 * structure_loss + input_loss
         z = x.clone()
+        self.device = x.device
         num_labels = self.num_classes
         if self.current_step % self.stationary_steps == 0:
             centroids = compute_centroids(z, target, self.num_classes)
-            centroids.to(x.device)
+            centroids.to(self.device)
             centroids = centroids.detach()
-            self.learnt_y = update_learnt_centroids(self.learnt_y, centroids)
+            centroids.to(self.device)
+            self.learnt_y = update_learnt_centroids(self.learnt_y, centroids, self.device)
         self.current_step += 1
 
         input_loss = cross_entropy_pull_loss(x, target, self.learnt_y)
