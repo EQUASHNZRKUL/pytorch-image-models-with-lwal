@@ -185,46 +185,18 @@ class LearningWithAdaptiveLabels(nn.Module):
         batch_size = x.shape[0]
         assert batch_size == target.shape[0]
 
-        # if target.shape != x.shape:
-        #     # NOTE currently assume smoothing or other label softening is applied upstream if targets are already sparse
-        #     num_classes = x.shape[-1]
-        #     # FIXME should off/on be different for smoothing w/ BCE? Other impl out there differ
-        #     off_value = self.smoothing / num_classes
-        #     on_value = 1. - self.smoothing + off_value
-        #     target = target.long().view(-1, 1)
-        #     target = torch.full(
-        #         (batch_size, num_classes),
-        #         off_value,
-        #         device=x.device, dtype=x.dtype).scatter_(1, target, on_value)
-
-        # if self.target_threshold is not None:
-        #     # Make target 0, or 1 if threshold set
-        #     target = target.gt(self.target_threshold).to(dtype=target.dtype)
-
-        # print('x/z', x.shape)
-        # print('target/in_y', target.shape)
-
         # lwal loss is 10 * structure_loss + input_loss
         z = x.clone()
         num_labels = self.num_classes
-        centroids = compute_centroids(z, target, self.num_classes)
-        centroids = centroids.detach()
-        self.learnt_y = update_learnt_centroids(self.learnt_y, centroids)
+        if self.current_step % self.stationary_steps == 0:
+            centroids = compute_centroids(z, target, self.num_classes)
+            centroids = centroids.detach()
+            self.learnt_y = update_learnt_centroids(self.learnt_y, centroids)
         self.current_step += 1
 
         input_loss = cross_entropy_pull_loss(x, target, self.learnt_y)
         structure_loss = cos_repel_loss_z(x, target, num_labels)
         em_loss = 10.0 * structure_loss + 1.0 * input_loss
-
-        # BCE loss, keep for testing checkpoint #1
-        # loss = F.binary_cross_entropy_with_logits(
-        #     x, target,
-        #     self.weight,
-        #     pos_weight=self.pos_weight,
-        #     reduction=self.reduction,
-        # )
-        # if self.sum_classes:
-        #     loss = loss.sum(-1).mean()
         
         # print('TRACE: leaving LWAL.forward()', em_loss)
         return em_loss
