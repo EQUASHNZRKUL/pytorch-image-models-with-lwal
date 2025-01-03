@@ -44,8 +44,11 @@ def update_learnt_centroids(learnt_y, centroids, device, decay_factor=1.0):
     # Extract latent dimensions and number of classes
     latent_dim = learnt_y.shape[1]
     num_classes = learnt_y.shape[0]
+    print('learnt_y', learnt_y.device)
+    print('centroids', centroids.device)
     # Create a mask to check if rows in centroids are all zeros
-    nonzero_mask = torch.any(centroids != 0, dim=1, device=device)
+    nonzero_mask = torch.any(centroids != 0, dim=1)
+    print('nonzero_mask', nonzero_mask.device)
 
     # Use the mask to update centroids: replace zero rows with corresponding rows from learnt_y
     updated_centroids = torch.where(
@@ -54,9 +57,11 @@ def update_learnt_centroids(learnt_y, centroids, device, decay_factor=1.0):
         learnt_y,
         device=device
     )
+    print('updated_centroids', updated_centroids.device)
 
     # Apply decay factor to blend centroids with learnt_y
     new_learnt_y = decay_factor * updated_centroids + (1 - decay_factor) * learnt_y
+    print('new_learnt_y', new_learnt_y.device)
 
     return new_learnt_y
 
