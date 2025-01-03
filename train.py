@@ -789,6 +789,7 @@ def main():
             latent_dim=args.latent_dim,
             num_classes=args.num_classes,
             stationary_steps=args.stationary_steps,
+            device=device,
             current_step=0,
             # BCE params
             # target_threshold=args.bce_target_thresh,

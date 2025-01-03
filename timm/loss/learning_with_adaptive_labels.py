@@ -55,7 +55,6 @@ def update_learnt_centroids(learnt_y, centroids, device, decay_factor=1.0):
         nonzero_mask.unsqueeze(1),  # Expand mask to match the second dimension
         centroids,
         learnt_y,
-        device=device
     )
     print('updated_centroids', updated_centroids.device)
 
@@ -150,6 +149,7 @@ class LearningWithAdaptiveLabels(nn.Module):
             latent_dim: int,
             num_classes: int,
             stationary_steps: int,
+            device: torch.device,
             current_step: int = 0,
             # BCE args
             # smoothing=0.1,
@@ -164,7 +164,7 @@ class LearningWithAdaptiveLabels(nn.Module):
         self.num_classes = num_classes
         self.stationary_steps = stationary_steps
         self.current_step = current_step
-        self.learnt_y = torch.eye(num_classes, latent_dim)
+        self.learnt_y = torch.eye(num_classes, latent_dim, device=device)
 
     def forward(self, x: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
         batch_size = x.shape[0]
