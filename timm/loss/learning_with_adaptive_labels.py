@@ -158,7 +158,6 @@ class LearningWithAdaptiveLabels(nn.Module):
             # sum_classes: bool = False,
             # pos_weight: Optional[Union[torch.Tensor, float]] = None,
     ):
-        # print('TRACE: Initializing LWAL')
         super(LearningWithAdaptiveLabels, self).__init__()
         self.latent_dim = latent_dim
         self.num_classes = num_classes
@@ -166,22 +165,7 @@ class LearningWithAdaptiveLabels(nn.Module):
         self.current_step = current_step
         self.learnt_y = torch.eye(num_classes, latent_dim)
 
-        # BCE inits
-        # assert 0. <= smoothing < 1.0
-        # if pos_weight is not None:
-        #     if not isinstance(pos_weight, torch.Tensor):
-        #         pos_weight = torch.tensor(pos_weight)
-        # self.smoothing = smoothing
-        # self.target_threshold = target_threshold
-        # self.reduction = 'none' if sum_classes else reduction
-        # self.sum_classes = sum_classes
-        # self.register_buffer('weight', weight)
-        # self.register_buffer('pos_weight', pos_weight)
-
     def forward(self, x: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
-        # print('TRACE: Entering LWAL.forward()')
-        # print('x', x.shape)
-        # print('target', target.shape)
         batch_size = x.shape[0]
         assert batch_size == target.shape[0]
 
@@ -190,6 +174,7 @@ class LearningWithAdaptiveLabels(nn.Module):
         num_labels = self.num_classes
         if self.current_step % self.stationary_steps == 0:
             centroids = compute_centroids(z, target, self.num_classes)
+            centroids.to(x.device)
             centroids = centroids.detach()
             self.learnt_y = update_learnt_centroids(self.learnt_y, centroids)
         self.current_step += 1
@@ -198,5 +183,4 @@ class LearningWithAdaptiveLabels(nn.Module):
         structure_loss = cos_repel_loss_z(x, target, num_labels)
         em_loss = 10.0 * structure_loss + 1.0 * input_loss
         
-        # print('TRACE: leaving LWAL.forward()', em_loss)
         return em_loss
