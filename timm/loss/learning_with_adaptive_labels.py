@@ -21,22 +21,12 @@ def pairwise_dist(A, B):
 
 
 def compute_centroids(z, in_y, num_classes=10):
-    # print('24 ENTERING compute_centroids')
-    # print('z', z.shape)
-    # print('in_y', in_y.shape)
     true_y = torch.argmax(in_y, dim=1)
-    # print('true_y', true_y.shape)
     class_mask = torch.nn.functional.one_hot(true_y, num_classes=num_classes).float()
-    # print('class_mask', class_mask.shape)
     sum_z = torch.matmul(class_mask.T, z)
-    # print('sum_z', sum_z.shape)
     count_per_class = class_mask.sum(dim=0)
-    # print('count_per_class', count_per_class.shape)
     count_per_class = torch.clamp(count_per_class, min=1e-12)
-    # print('count_per_class', count_per_class.shape)
     centroids = sum_z / count_per_class.unsqueeze(1)
-    # print('centroids', centroids.shape)
-    # Crop out the 
     return centroids
 
 
@@ -44,11 +34,8 @@ def update_learnt_centroids(learnt_y, centroids, device, decay_factor=1.0):
     # Extract latent dimensions and number of classes
     latent_dim = learnt_y.shape[1]
     num_classes = learnt_y.shape[0]
-    print('learnt_y', learnt_y.device)
-    print('centroids', centroids.device)
     # Create a mask to check if rows in centroids are all zeros
     nonzero_mask = torch.any(centroids != 0, dim=1)
-    print('nonzero_mask', nonzero_mask.device)
 
     # Use the mask to update centroids: replace zero rows with corresponding rows from learnt_y
     updated_centroids = torch.where(
@@ -56,11 +43,9 @@ def update_learnt_centroids(learnt_y, centroids, device, decay_factor=1.0):
         centroids,
         learnt_y,
     )
-    print('updated_centroids', updated_centroids.device)
 
     # Apply decay factor to blend centroids with learnt_y
     new_learnt_y = decay_factor * updated_centroids + (1 - decay_factor) * learnt_y
-    print('new_learnt_y', new_learnt_y.device)
 
     return new_learnt_y
 
@@ -176,9 +161,7 @@ class LearningWithAdaptiveLabels(nn.Module):
         num_labels = self.num_classes
         if self.current_step % self.stationary_steps == 0:
             centroids = compute_centroids(z, target, self.num_classes)
-            centroids.to(self.device)
             centroids = centroids.detach()
-            centroids.to(self.device)
             self.learnt_y = update_learnt_centroids(self.learnt_y, centroids, self.device)
         self.current_step += 1
 
