@@ -9,15 +9,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
-def pairwise_dist(A, B):
-    na = torch.sum(A**2, dim=1)
-    nb = torch.sum(B**2, dim=1)
-
-    na = na.reshape(-1, 1)
-    nb = nb.reshape(1, -1)
-
-    D = torch.sqrt(torch.maximum(na - 2 * torch.matmul(A, B.T) + nb, torch.tensor(1e-12)))
-    return D
 
 
 def compute_centroids(z, in_y, num_classes=10):
@@ -75,14 +66,6 @@ def binary_cross_entropy_pull_loss(logits, labels):
     
     # Take the mean over all classes and samples
     return bce_loss.mean()
-
-
-def cross_entropy_nn_pred(enc_x, in_y, learnt_y):
-    enc_x_to_learnt_y_dist = pairwise_dist(enc_x, learnt_y)
-    logits = F.softmax(-1. * enc_x_to_learnt_y_dist, dim=1)
-    preds = torch.argmax(logits, dim=1)
-    true_y = torch.argmax(in_y, dim=1)
-    return preds, true_y
 
 
 def cos_repel_loss_z(z, in_y, num_labels):
@@ -150,6 +133,9 @@ class LearningWithAdaptiveLabels(nn.Module):
         self.stationary_steps = stationary_steps
         self.current_step = current_step
         self.learnt_y = torch.eye(num_classes, latent_dim, device=device)
+    
+    def get_learnt_y(self):
+        return self.learnt_y
 
     def forward(self, x: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
         batch_size = x.shape[0]

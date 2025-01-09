@@ -894,7 +894,7 @@ def main():
             elif args.distributed and hasattr(loader_train.sampler, 'set_epoch'):
                 loader_train.sampler.set_epoch(epoch)
 
-            train_metrics = train_one_epoch(
+            train_metrics, learnt_y = train_one_epoch(
                 epoch,
                 model,
                 loader_train,
@@ -925,6 +925,7 @@ def main():
                     args,
                     device=device,
                     amp_autocast=amp_autocast,
+                    learnt_y=learnt_y
                 )
 
                 if model_ema is not None and not args.model_ema_force_cpu:
@@ -1026,6 +1027,7 @@ def train_one_epoch(
     data_start_time = update_start_time = time.time()
     optimizer.zero_grad()
     update_sample_count = 0
+    learnt_y = None
     for batch_idx, (input, target) in enumerate(loader):
         # print('1013 input', input.shape)
         # print('1014 input', target.shape)
@@ -1050,7 +1052,10 @@ def train_one_epoch(
             with amp_autocast(device_type=device.type, dtype=torch.bfloat16):
                 output = model(input)
                 # print('1024: output', output.shape)
-                loss = loss_fn(output, target)
+                if args.lwal_loss:
+                    loss, learnt_y = loss_fn(output, target)
+                else:
+                    loss = loss_fn(output, target)
             if accum_steps > 1:
                 loss /= accum_steps
             return loss
@@ -1149,7 +1154,7 @@ def train_one_epoch(
     if hasattr(optimizer, 'sync_lookahead'):
         optimizer.sync_lookahead()
 
-    return OrderedDict([('loss', losses_m.avg)])
+    return OrderedDict([('loss', losses_m.avg)]), learnt_y
 
 
 def validate(
@@ -1159,7 +1164,8 @@ def validate(
         args,
         device=torch.device('cuda'),
         amp_autocast=suppress,
-        log_suffix=''
+        log_suffix='',
+        learnt_y=None
 ):
     batch_time_m = utils.AverageMeter()
     losses_m = utils.AverageMeter()
@@ -1191,7 +1197,10 @@ def validate(
                     target = target[0:target.size(0):reduce_factor]
 
                 loss = loss_fn(output, target)
-            acc1, acc5 = utils.accuracy(output, target, topk=(1, 5))
+            if args.lwal:
+                acc1, acc5 = utils.lwal_accuracy(output, target, learnt_y)
+            else:
+                acc1, acc5 = utils.accuracy(output, target, topk=(1, 5))
 
             if args.distributed:
                 reduced_loss = utils.reduce_tensor(loss.data, args.world_size)
