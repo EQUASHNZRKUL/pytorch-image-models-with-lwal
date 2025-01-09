@@ -9,7 +9,15 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
+def pairwise_dist(A, B):
+    na = torch.sum(A**2, dim=1)
+    nb = torch.sum(B**2, dim=1)
 
+    na = na.reshape(-1, 1)
+    nb = nb.reshape(1, -1)
+
+    D = torch.sqrt(torch.maximum(na - 2 * torch.matmul(A, B.T) + nb, torch.tensor(1e-12)))
+    return D
 
 def compute_centroids(z, in_y, num_classes=10):
     true_y = torch.argmax(in_y, dim=1)
