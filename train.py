@@ -1215,7 +1215,7 @@ def validate(
 
             losses_m.update(reduced_loss.item(), input.size(0))
             top1_m.update(acc1.item(), output.size(0))
-            top5_m.update(acc5.item(), output.size(0))
+            # top5_m.update(acc5.item(), output.size(0))
 
             batch_time_m.update(time.time() - end)
             end = time.time()
@@ -1226,7 +1226,7 @@ def validate(
                     f'Time: {batch_time_m.val:.3f} ({batch_time_m.avg:.3f})  '
                     f'Loss: {losses_m.val:>7.3f} ({losses_m.avg:>6.3f})  '
                     f'Acc@1: {top1_m.val:>7.3f} ({top1_m.avg:>7.3f})  '
-                    f'Acc@5: {top5_m.val:>7.3f} ({top5_m.avg:>7.3f})'
+                    # f'Acc@5: {top5_m.val:>7.3f} ({top5_m.avg:>7.3f})'
                 )
 
     metrics = OrderedDict([('loss', losses_m.avg), ('top1', top1_m.avg), ('top5', top5_m.avg)])
