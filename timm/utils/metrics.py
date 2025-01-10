@@ -45,6 +45,7 @@ def pairwise_dist(A, B):
 
 def cross_entropy_nn_pred(enc_x, in_y, learnt_y):
     """Cross Entropy NN Prediction based on learnt_y."""
+
     enc_x_to_learnt_y_dist = pairwise_dist(enc_x, learnt_y)
     logits = F.softmax(-1. * enc_x_to_learnt_y_dist, dim=1)
     preds = torch.argmax(logits, dim=1)
@@ -53,6 +54,11 @@ def cross_entropy_nn_pred(enc_x, in_y, learnt_y):
 
 def lwal_accuracy(output, target, learnt_y, topk=(1,)):
     """Computes the 1-accuracy for lwal loss."""
-    pred_y, true_y = cross_entropy_nn_pred(output, target, learnt_y)
+    print('output', output.type())
+    x = output.to(torch.float32)
+    print('x', x.type())
+    print('target', target.type())
+    print('learnt_y', learnt_y.type())
+    pred_y, true_y = cross_entropy_nn_pred(x, target, learnt_y)
     acc1 = (pred_y == true_y).float().mean() * 100.
     return acc1, 0.0
