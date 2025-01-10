@@ -51,6 +51,8 @@ def cross_entropy_nn_pred(enc_x, in_y, learnt_y):
     print('logits', logits.shape)
     preds = torch.argmax(logits, dim=1)
     print('in_y', in_y.shape)
+    print('in_y values', in_y)
+
     true_y = torch.argmax(in_y, dim=1)
     return preds, true_y
 
@@ -61,6 +63,7 @@ def lwal_accuracy(output, target, learnt_y, topk=(1,)):
     print('x', x.type())
     print('target', target.type())
     print('learnt_y', learnt_y.type())
-    pred_y, true_y = cross_entropy_nn_pred(x, target, learnt_y)
+    one_hot_target = torch.nn.functional.one_hot(target, num_classes=10)
+    pred_y, true_y = cross_entropy_nn_pred(x, one_hot_target, learnt_y)
     acc1 = (pred_y == true_y).float().mean() * 100.
     return acc1, 0.0
