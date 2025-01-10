@@ -163,4 +163,4 @@ class LearningWithAdaptiveLabels(nn.Module):
         structure_loss = cos_repel_loss_z(x, target, num_labels)
         em_loss = 10.0 * structure_loss + 1.0 * input_loss
         
-        return em_loss
+        return em_loss, self.learnt_y

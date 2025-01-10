@@ -1049,6 +1049,7 @@ def train_one_epoch(
 
         def _forward():
             # print(1022, device.type)
+            nonlocal learnt_y
             with amp_autocast(device_type=device.type, dtype=torch.bfloat16):
                 output = model(input)
                 # print('1024: output', output.shape)
