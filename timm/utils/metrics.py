@@ -48,7 +48,9 @@ def cross_entropy_nn_pred(enc_x, in_y, learnt_y):
 
     enc_x_to_learnt_y_dist = pairwise_dist(enc_x, learnt_y)
     logits = F.softmax(-1. * enc_x_to_learnt_y_dist, dim=1)
+    print('logits', logits.shape)
     preds = torch.argmax(logits, dim=1)
+    print('in_y', in_y.shape)
     true_y = torch.argmax(in_y, dim=1)
     return preds, true_y
 
