@@ -925,7 +925,8 @@ def main():
                     args,
                     device=device,
                     amp_autocast=amp_autocast,
-                    learnt_y=learnt_y
+                    learnt_y=learnt_y,
+                    training=(args.model == 'resnet50')
                 )
 
                 if model_ema is not None and not args.model_ema_force_cpu:
@@ -1166,14 +1167,18 @@ def validate(
         device=torch.device('cuda'),
         amp_autocast=suppress,
         log_suffix='',
-        learnt_y=None
+        learnt_y=None,
+        training=False
 ):
     batch_time_m = utils.AverageMeter()
     losses_m = utils.AverageMeter()
     top1_m = utils.AverageMeter()
     top5_m = utils.AverageMeter()
 
-    model.eval()
+    if training:
+        model.train()
+    else:
+        model.eval()
 
     end = time.time()
     last_idx = len(loader) - 1
