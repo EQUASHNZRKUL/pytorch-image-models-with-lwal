@@ -154,6 +154,7 @@ class LearningWithAdaptiveLabels(nn.Module):
         self.device = x.device
         num_labels = self.num_classes
         if self.current_step % self.stationary_steps == 0:
+            print('compute_centroids ran!', self.current_step, self.stationary_steps)
             centroids = compute_centroids(z, target, self.num_classes)
             centroids = centroids.detach()
             self.learnt_y = update_learnt_centroids(self.learnt_y, centroids, self.device)
