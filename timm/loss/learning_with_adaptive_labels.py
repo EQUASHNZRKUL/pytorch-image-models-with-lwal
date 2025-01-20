@@ -163,6 +163,7 @@ class LearningWithAdaptiveLabels(nn.Module):
 
         input_loss = cross_entropy_pull_loss(x, target, self.learnt_y)
         structure_loss = cos_repel_loss_z(x, target, num_labels)
-        em_loss = 10.0 * structure_loss + 1.0 * input_loss
+        # em_loss = 10.0 * structure_loss + 1.0 * input_loss
+        em_loss = input_loss
         
         return em_loss, self.learnt_y
