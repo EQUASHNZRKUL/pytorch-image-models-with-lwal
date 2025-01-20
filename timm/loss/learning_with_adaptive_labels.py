@@ -126,7 +126,7 @@ class LearningWithAdaptiveLabels(nn.Module):
             num_classes: int,
             stationary_steps: int,
             device: torch.device,
-            current_step: int = 0,
+            current_step: int = 1,
             # BCE args
             # smoothing=0.1,
             # target_threshold: Optional[float] = None,
@@ -154,10 +154,11 @@ class LearningWithAdaptiveLabels(nn.Module):
         self.device = x.device
         num_labels = self.num_classes
         if self.current_step % self.stationary_steps == 0:
-            print('compute_centroids ran!', self.current_step, self.stationary_steps)
             centroids = compute_centroids(z, target, self.num_classes)
             centroids = centroids.detach()
             self.learnt_y = update_learnt_centroids(self.learnt_y, centroids, self.device)
+            print('compute_centroids ran!', self.current_step, self.stationary_steps, centroids)
+            print('new embeddings: ', self.learnt_y)
         self.current_step += 1
 
         input_loss = cross_entropy_pull_loss(x, target, self.learnt_y)
