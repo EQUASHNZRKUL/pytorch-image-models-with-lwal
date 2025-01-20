@@ -790,7 +790,7 @@ def main():
             num_classes=args.num_classes,
             stationary_steps=args.stationary_steps,
             device=device,
-            current_step=0,
+            current_step=1,
             # BCE params
             # target_threshold=args.bce_target_thresh,
             # sum_classes=args.bce_sum,
