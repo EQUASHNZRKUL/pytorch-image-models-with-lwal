@@ -157,8 +157,8 @@ class LearningWithAdaptiveLabels(nn.Module):
             centroids = compute_centroids(z, target, self.num_classes)
             centroids = centroids.detach()
             self.learnt_y = update_learnt_centroids(self.learnt_y, centroids, self.device)
-            print('compute_centroids ran!', self.current_step, self.stationary_steps, centroids)
-            print('new embeddings: ', self.learnt_y)
+            # print('compute_centroids ran!', self.current_step, self.stationary_steps, centroids)
+            # print('new embeddings: ', self.learnt_y)
         self.current_step += 1
 
         input_loss = cross_entropy_pull_loss(x, target, self.learnt_y)
