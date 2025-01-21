@@ -161,8 +161,9 @@ class LearningWithAdaptiveLabels(nn.Module):
             # print('new embeddings: ', self.learnt_y)
         self.current_step += 1
 
-        input_loss = cross_entropy_pull_loss(x, target, self.learnt_y)
-        structure_loss = cos_repel_loss_z(x, target, num_labels)
+        # input_loss = cross_entropy_pull_loss(x, target, self.learnt_y)
+        input_loss = binary_cross_entropy_pull_loss(x, target, self.learnt_y)
+        structure_loss = cos_repel_loss_z_optimized(x, target, num_labels)
         if self.current_step % 195 == 0:
             print('input_loss: ', input_loss)
             print('structure_loss: ', structure_loss)
