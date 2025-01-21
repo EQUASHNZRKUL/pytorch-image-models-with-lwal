@@ -71,12 +71,9 @@ def binary_cross_entropy_pull_loss(enc_x, in_y, learnt_y):
 
     # Compute logits by applying softmax to the negative distances
     logits = F.softmax(-1.0 * enc_x_dist, dim=1)
-
-    # Apply sigmoid activation to logits to get probabilities
-    probs = torch.sigmoid(logits)
     
     # Compute BCE loss for each class independently
-    bce_loss = F.binary_cross_entropy(probs, in_y, reduction='none')
+    bce_loss = F.binary_cross_entropy_with_logits(logits, in_y, reduction='none')
     
     # Take the mean over all classes and samples
     return bce_loss.mean()
