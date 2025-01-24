@@ -156,10 +156,14 @@ class LearningWithAdaptiveLabels(nn.Module):
         z = x.clone()
         self.device = x.device
         num_labels = self.num_classes
+        print("printing grads")
+        print('x', x.grad)
+        print('z', z.grad)
         if self.current_step % self.stationary_steps == 0:
             centroids = compute_centroids(z, target, self.num_classes)
             centroids = centroids.detach()
             self.learnt_y = update_learnt_centroids(self.learnt_y, centroids, self.device)
+            print('centroids', centroids.grad)
             # print('compute_centroids ran!', self.current_step, self.stationary_steps, centroids)
             # print('new embeddings: ', self.learnt_y)
         self.current_step += 1
@@ -174,11 +178,7 @@ class LearningWithAdaptiveLabels(nn.Module):
         # em_loss = 10.0 * structure_loss + 1.0 * input_loss
         em_loss = input_loss
 
-        print("printing grads")
-        print('x', x.grad)
-        print('z', z.grad)
         print('num_labels', num_labels)
-        print('centroids', centroids.grad)
         print('learnt_y', self.learnt_y.grad)
         print('input_loss', input_loss.grad)
         print('structure_loss', structure_loss.grad)
