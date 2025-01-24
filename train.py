@@ -1074,6 +1074,9 @@ def train_one_epoch(
                     create_graph=second_order,
                     need_update=need_update,
                 )
+                print('valid gradients after the loss.backward() call?')
+                for name, param in model.named_parameters():
+                    print(name, param.grad)
             else:
                 # print('TRACE: ENTERING backward()')
                 # print('second_order', second_order)
