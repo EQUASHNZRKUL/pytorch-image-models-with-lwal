@@ -596,7 +596,6 @@ def main():
     else:
         if utils.is_primary(args):
             _logger.info('AMP not enabled. Training in float32.')
-    print('loss_scaler', loss_scaler)
 
     # optionally resume from a checkpoint
     resume_epoch = None
@@ -1076,14 +1075,14 @@ def train_one_epoch(
                     need_update=need_update,
                 )
             else:
-                print('TRACE: ENTERING backward()')
-                print('second_order', second_order)
+                # print('TRACE: ENTERING backward()')
+                # print('second_order', second_order)
                 _loss.backward(create_graph=second_order)
                 # print('TRACE: EXITING backward()')
                 if need_update:
-                    print('needed update')
+                    # print('needed update')
                     if args.clip_grad is not None:
-                        print('clip_grad is not None')
+                        # print('clip_grad is not None')
                         utils.dispatch_clip_grad(
                             model_parameters(model, exclude_head='agc' in args.clip_mode),
                             value=args.clip_grad,
@@ -1091,17 +1090,16 @@ def train_one_epoch(
                         )
                     optimizer.step()
 
-        print("printing conditional flow variables")
-        print('has_no_sync', has_no_sync)
-        print('need_update', need_update)
-        print('args.distributed', args.distributed)
+        # print("printing conditional flow variables")
+        # print('has_no_sync', has_no_sync) False
+        # print('need_update', need_update) True
+        # print('args.distributed', args.distributed) False
         if has_no_sync and not need_update:
-            print('has_no_sync and not need_update')
             with model.no_sync():
                 loss = _forward()
                 _backward(loss)
         else:
-            print('does have sync')
+            # print('does have sync')
             loss = _forward()
             _backward(loss)
 

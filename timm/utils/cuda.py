@@ -65,9 +65,11 @@ class NativeScaler:
         self._scaler.scale(loss).backward(create_graph=create_graph)
         if need_update:
             if clip_grad is not None:
+                print('clip_grad is not None')
                 assert parameters is not None
                 self._scaler.unscale_(optimizer)  # unscale the gradients of optimizer's assigned params in-place
                 dispatch_clip_grad(parameters, clip_grad, mode=clip_mode)
+            print('scaler enabled', self._scaler.enabled)
             self._scaler.step(optimizer)
             self._scaler.update()
 
