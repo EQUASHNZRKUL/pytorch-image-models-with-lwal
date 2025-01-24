@@ -28,6 +28,7 @@ from functools import partial
 import torch
 import torch.nn as nn
 import torchvision.utils
+import torchviz
 import yaml
 from torch.nn.parallel import DistributedDataParallel as NativeDDP
 
@@ -1060,6 +1061,7 @@ def train_one_epoch(
                     loss = loss_fn(output, target)
             if accum_steps > 1:
                 loss /= accum_steps
+            torchviz.make_dot(loss, params=dict(model.named_parameters())).render("loss_graph", format="png")
             return loss
 
         def _backward(_loss):
@@ -1074,9 +1076,9 @@ def train_one_epoch(
                     create_graph=second_order,
                     need_update=need_update,
                 )
-                print('valid gradients after the loss.backward() call?')
-                for name, param in model.named_parameters():
-                    print(name, param.grad)
+                # print('valid gradients after the loss.backward() call?')
+                # for name, param in model.named_parameters():
+                #     print(name, param.grad)
             else:
                 # print('TRACE: ENTERING backward()')
                 # print('second_order', second_order)
