@@ -596,6 +596,7 @@ def main():
     else:
         if utils.is_primary(args):
             _logger.info('AMP not enabled. Training in float32.')
+    print('loss_scaler', loss_scaler)
 
     # optionally resume from a checkpoint
     resume_epoch = None
@@ -1064,7 +1065,7 @@ def train_one_epoch(
 
         def _backward(_loss):
             if loss_scaler is not None:
-                # print('1059')
+                print('loss_scaler is not None')
                 loss_scaler(
                     _loss,
                     optimizer,
@@ -1100,6 +1101,7 @@ def train_one_epoch(
                 loss = _forward()
                 _backward(loss)
         else:
+            print('does have sync')
             loss = _forward()
             _backward(loss)
 
