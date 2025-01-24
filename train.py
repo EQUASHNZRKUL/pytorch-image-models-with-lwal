@@ -988,6 +988,20 @@ def main():
     print(f'--result\n{json.dumps(results, indent=4)}')
 
 
+def getBack(var_grad_fn):
+    print(var_grad_fn)
+    for n in var_grad_fn.next_functions:
+        if n[0]:
+            try:
+                tensor = getattr(n[0], 'variable')
+                print(n[0])
+                print('Tensor with grad found:', tensor)
+                print(' - gradient:', tensor.grad)
+                print()
+            except AttributeError as e:
+                getBack(n[0])
+
+
 def train_one_epoch(
         epoch,
         model,
@@ -1061,7 +1075,7 @@ def train_one_epoch(
                     loss = loss_fn(output, target)
             if accum_steps > 1:
                 loss /= accum_steps
-            torchviz.make_dot(loss, params=dict(model.named_parameters())).render("loss_graph", format="png")
+            # torchviz.make_dot(loss, params=dict(model.named_parameters())).render("loss_graph", format="png")
             return loss
 
         def _backward(_loss):
@@ -1076,6 +1090,8 @@ def train_one_epoch(
                     create_graph=second_order,
                     need_update=need_update,
                 )
+                print('tracing back tensors from loss after calling backward().')
+                getBack(_loss.grad_fn)
                 # print('valid gradients after the loss.backward() call?')
                 # for name, param in model.named_parameters():
                 #     print(name, param.grad)
