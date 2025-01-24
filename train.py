@@ -1064,7 +1064,7 @@ def train_one_epoch(
 
         def _backward(_loss):
             if loss_scaler is not None:
-                print('loss_scaler is not None')
+                # print('loss_scaler is not None')
                 loss_scaler(
                     _loss,
                     optimizer,
