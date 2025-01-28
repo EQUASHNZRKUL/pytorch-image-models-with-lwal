@@ -29,25 +29,18 @@ def compute_centroids(z, in_y, num_classes=10):
     return centroids
 
 
-def update_learnt_centroids(learnt_y, centroids, device, decay_factor=1.0):
-    # Extract latent dimensions and number of classes
-    latent_dim = learnt_y.shape[1]
-    num_classes = learnt_y.shape[0]
-    # Create a mask to check if rows in centroids are all zeros
+def update_learnt_centroids(learnt_y, centroids, decay_factor=1.0):
     nonzero_mask = torch.any(centroids != 0, dim=1)
 
-    # Use the mask to update centroids: replace zero rows with corresponding rows from learnt_y
     updated_centroids = torch.where(
         nonzero_mask.unsqueeze(1),  # Expand mask to match the second dimension
         centroids,
         learnt_y,
     )
 
-    # Apply decay factor to blend centroids with learnt_y
     new_learnt_y = decay_factor * updated_centroids + (1 - decay_factor) * learnt_y
 
     return new_learnt_y
-
 
 def cross_entropy_pull_loss(enc_x, in_y, learnt_y):
     # Compute pairwise distances between enc_x and learnt_y
@@ -156,32 +149,16 @@ class LearningWithAdaptiveLabels(nn.Module):
         z = x.clone()
         self.device = x.device
         num_labels = self.num_classes
-        # print("printing grads")
-        # print('x', x.grad_fn)
-        # print('z', z.grad_fn)
+        structure_loss=0.0
         if self.current_step % self.stationary_steps == 0:
             centroids = compute_centroids(z, target, self.num_classes)
             centroids = centroids.detach()
-            self.learnt_y = update_learnt_centroids(self.learnt_y, centroids, self.device)
-            # print('centroids', centroids.grad_fn)
-            # print('compute_centroids ran!', self.current_step, self.stationary_steps, centroids)
-            # print('new embeddings: ', self.learnt_y)
+            self.learnt_y = update_learnt_centroids(self.learnt_y, centroids)
+            structure_loss = cos_repel_loss_z_optimized(x, target)
         self.current_step += 1
 
         input_loss = cross_entropy_pull_loss(x, target, self.learnt_y)
-        # input_loss = binary_cross_entropy_pull_loss(x, target, self.learnt_y)
-        # structure_loss = cos_repel_loss_z(x, target, num_labels)
-        structure_loss = cos_repel_loss_z_optimized(x, target)
-        if self.current_step % 195 == 0:
-            print('input_loss: ', input_loss)
-            print('structure_loss: ', structure_loss)
         # em_loss = 10.0 * structure_loss + 1.0 * input_loss
         em_loss = input_loss
 
-        # print('num_labels', num_labels)
-        # print('learnt_y', self.learnt_y.grad_fn)
-        # print('input_loss', input_loss.grad_fn)
-        # print('structure_loss', structure_loss.grad_fn)
-        # print('em_loss', em_loss.grad_fn)
-        
-        return em_loss, self.learnt_y
+        return em_loss
