@@ -1092,7 +1092,7 @@ def train_one_epoch(
                 )
                 # print('tracing back tensors from loss after calling backward().')
                 # getBack(_loss.grad_fn)
-                assert(False == True)
+                # assert(False == True)
                 # print('valid gradients after the loss.backward() call?')
                 # for name, param in model.named_parameters():
                 #     print(name, param.grad)
