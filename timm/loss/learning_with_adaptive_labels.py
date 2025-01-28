@@ -161,4 +161,4 @@ class LearningWithAdaptiveLabels(nn.Module):
         # em_loss = 10.0 * structure_loss + 1.0 * input_loss
         em_loss = input_loss
 
-        return em_loss
+        return em_loss, self.learnt_y
