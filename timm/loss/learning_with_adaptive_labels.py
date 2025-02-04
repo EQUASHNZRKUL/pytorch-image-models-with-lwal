@@ -123,7 +123,7 @@ class LearningWithAdaptiveLabels(nn.Module):
             stationary_steps: int,
             device: torch.device,
             current_step: int = 1,
-            num_features: int = 32,
+            num_features: int = 2048,
             # BCE args
             # smoothing=0.1,
             # target_threshold: Optional[float] = None,
