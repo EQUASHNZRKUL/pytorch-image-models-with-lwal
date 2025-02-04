@@ -138,7 +138,7 @@ class LearningWithAdaptiveLabels(nn.Module):
         self.stationary_steps = stationary_steps
         self.current_step = current_step
         self.learnt_y = torch.eye(num_classes, latent_dim, device=device)
-        self.fc = nn.Linear(num_features, num_classes, bias=True)
+        self.fc = nn.Linear(num_features, latent_dim, bias=True)
     
     def get_learnt_y(self):
         return self.learnt_y
