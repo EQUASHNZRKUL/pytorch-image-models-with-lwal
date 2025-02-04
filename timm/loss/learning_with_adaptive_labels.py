@@ -123,6 +123,7 @@ class LearningWithAdaptiveLabels(nn.Module):
             stationary_steps: int,
             device: torch.device,
             current_step: int = 1,
+            num_features: int = 32,
             # BCE args
             # smoothing=0.1,
             # target_threshold: Optional[float] = None,
@@ -137,6 +138,7 @@ class LearningWithAdaptiveLabels(nn.Module):
         self.stationary_steps = stationary_steps
         self.current_step = current_step
         self.learnt_y = torch.eye(num_classes, latent_dim, device=device)
+        self.fc = nn.Linear(num_features, num_classes, bias=True)
     
     def get_learnt_y(self):
         return self.learnt_y
@@ -144,6 +146,9 @@ class LearningWithAdaptiveLabels(nn.Module):
     def forward(self, x: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
         batch_size = x.shape[0]
         assert batch_size == target.shape[0]
+        print('forward x', x.shape)
+        x = self.fc(x)
+        print('forward self.fc(x)', x.shape)
 
         # lwal loss is 10 * structure_loss + input_loss
         z = x.clone()

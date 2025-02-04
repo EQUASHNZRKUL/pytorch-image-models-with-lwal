@@ -626,7 +626,7 @@ class ResNet(nn.Module):
             x = self.layer4(x)
         return x
 
-    def forward_head(self, x: torch.Tensor, pre_logits: bool = False) -> torch.Tensor:
+    def forward_head(self, x: torch.Tensor, pre_logits: bool = True) -> torch.Tensor:
         x = self.global_pool(x)
         if self.drop_rate:
             x = F.dropout(x, p=float(self.drop_rate), training=self.training)
@@ -635,6 +635,7 @@ class ResNet(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         x = self.forward_features(x)
         x = self.forward_head(x)
+        print('forward_head', x.shape)
         return x
 
 
