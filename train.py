@@ -1233,7 +1233,10 @@ def validate(
                     output = output.unfold(0, reduce_factor, reduce_factor).mean(dim=2)
                     target = target[0:target.size(0):reduce_factor]
 
-                loss = loss_fn(output, target)
+                if args.lwal_loss:
+                    loss = loss_fn.test(output, target)
+                else:
+                    loss = loss_fn(output, target)
             if args.lwal_loss:
                 acc1, acc5 = loss_fn.accuracy(output, target, learnt_y)
             else:

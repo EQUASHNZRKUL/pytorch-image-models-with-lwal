@@ -180,6 +180,22 @@ class LearningWithAdaptiveLabels(nn.Module):
 
         return em_loss, self.learnt_y
     
+    def test(self, x: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
+        batch_size = x.shape[0]
+        assert batch_size == target.shape[0]
+        x = self.fc(x)
+
+        # lwal loss is 10 * structure_loss + input_loss
+        z = x.clone()
+        self.device = x.device
+        structure_loss=0.0
+
+        input_loss = cross_entropy_pull_loss(x, target, self.learnt_y)
+        # em_loss = 10.0 * structure_loss + 1.0 * input_loss
+        em_loss = input_loss
+
+        return em_loss
+    
     def accuracy(self, output, target, learnt_y, topk=(1,)):
         """Computes the 1-accuracy for lwal loss."""
         x = self.fc(output)
