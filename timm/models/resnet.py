@@ -635,7 +635,6 @@ class ResNet(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         x = self.forward_features(x)
         x = self.forward_head(x)
-        print('forward_head', x.shape)
         return x
 
 

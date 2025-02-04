@@ -146,9 +146,7 @@ class LearningWithAdaptiveLabels(nn.Module):
     def forward(self, x: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
         batch_size = x.shape[0]
         assert batch_size == target.shape[0]
-        print('forward x', x.shape)
         x = self.fc(x)
-        print('forward self.fc(x)', x.shape)
 
         # lwal loss is 10 * structure_loss + input_loss
         z = x.clone()
