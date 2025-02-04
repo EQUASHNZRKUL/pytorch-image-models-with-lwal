@@ -1233,7 +1233,7 @@ def validate(
 
                 loss = loss_fn(output, target)
             if args.lwal_loss:
-                acc1, acc5 = utils.lwal_accuracy(output, target, learnt_y)
+                acc1, acc5 = loss_fn.accuracy(output, target, learnt_y)
             else:
                 acc1, acc5 = utils.accuracy(output, target, topk=(1, 5))
 

@@ -112,6 +112,20 @@ def cos_repel_loss_z_optimized(z, in_y):
     return torch.mean(cos_dist * class_mask)
 
 
+def cross_entropy_nn_pred(enc_x, in_y, learnt_y):
+    """Cross Entropy NN Prediction based on learnt_y."""
+
+    enc_x_to_learnt_y_dist = pairwise_dist(enc_x, learnt_y)
+    logits = F.softmax(-1. * enc_x_to_learnt_y_dist, dim=1)
+    # print('logits', logits.shape)
+    preds = torch.argmax(logits, dim=1)
+    # print('in_y', in_y.shape)
+    # print('in_y values', in_y)
+
+    true_y = torch.argmax(in_y, dim=1)
+    return preds, true_y
+
+
 class LearningWithAdaptiveLabels(nn.Module):
     """ BCE with optional one-hot from dense targets, label smoothing, thresholding
     NOTE for experiments comparing CE to BCE /w label smoothing, may remove
@@ -165,3 +179,12 @@ class LearningWithAdaptiveLabels(nn.Module):
         em_loss = input_loss
 
         return em_loss, self.learnt_y
+    
+    def accuracy(self, output, target, learnt_y, topk=(1,)):
+        """Computes the 1-accuracy for lwal loss."""
+        x = self.fc(output)
+        x = x.to(torch.float32)
+        one_hot_target = torch.nn.functional.one_hot(target, num_classes=10)
+        pred_y, true_y = cross_entropy_nn_pred(x, one_hot_target, learnt_y)
+        acc1 = (pred_y == true_y).float().mean() * 100.
+        return acc1, 0.0
