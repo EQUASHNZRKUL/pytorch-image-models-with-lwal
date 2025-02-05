@@ -152,7 +152,6 @@ class LearningWithAdaptiveLabels(nn.Module):
         self.stationary_steps = stationary_steps
         self.current_step = current_step
         self.learnt_y = torch.eye(num_classes, latent_dim, device=device)
-        self.fc = nn.Linear(num_features, latent_dim, bias=True)
     
     def get_learnt_y(self):
         return self.learnt_y
@@ -160,7 +159,7 @@ class LearningWithAdaptiveLabels(nn.Module):
     def forward(self, x: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
         batch_size = x.shape[0]
         assert batch_size == target.shape[0]
-        x = self.fc(x)
+        # x = self.fc(x)
 
         # lwal loss is 10 * structure_loss + input_loss
         z = x.clone()
@@ -183,7 +182,7 @@ class LearningWithAdaptiveLabels(nn.Module):
     def test(self, x: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
         batch_size = x.shape[0]
         assert batch_size == target.shape[0]
-        x = self.fc(x)
+        # x = self.fc(x)
 
         # lwal loss is 10 * structure_loss + input_loss
         z = x.clone()
@@ -199,7 +198,7 @@ class LearningWithAdaptiveLabels(nn.Module):
     def accuracy(self, output, target, learnt_y, topk=(1,)):
         """Computes the 1-accuracy for lwal loss."""
         output = output.to(torch.float32)
-        x = self.fc(output)
+        # x = self.fc(output)
         one_hot_target = torch.nn.functional.one_hot(target, num_classes=10)
         pred_y, true_y = cross_entropy_nn_pred(x, one_hot_target, learnt_y)
         acc1 = (pred_y == true_y).float().mean() * 100.
