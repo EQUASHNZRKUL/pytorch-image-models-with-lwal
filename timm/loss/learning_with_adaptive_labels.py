@@ -197,7 +197,7 @@ class LearningWithAdaptiveLabels(nn.Module):
     
     def accuracy(self, output, target, learnt_y, topk=(1,)):
         """Computes the 1-accuracy for lwal loss."""
-        output = output.to(torch.float32)
+        x = output.to(torch.float32)
         # x = self.fc(output)
         one_hot_target = torch.nn.functional.one_hot(target, num_classes=10)
         pred_y, true_y = cross_entropy_nn_pred(x, one_hot_target, learnt_y)
