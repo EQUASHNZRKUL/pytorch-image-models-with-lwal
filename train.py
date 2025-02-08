@@ -27,6 +27,7 @@ from functools import partial
 
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 import torchvision.utils
 import torchviz
 import yaml
@@ -1233,6 +1234,9 @@ def validate(
                     output = output.unfold(0, reduce_factor, reduce_factor).mean(dim=2)
                     target = target[0:target.size(0):reduce_factor]
 
+                print('output', output.shape)
+                print('target', target.shape)
+                print('softmax', F.log_softmax(output, dim=-1).shape)
                 loss = loss_fn(output, target)
                 # if args.lwal_loss:
                 #     loss = loss_fn.test(output, target)
