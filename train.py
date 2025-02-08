@@ -825,8 +825,8 @@ def main():
         train_loss_fn = nn.CrossEntropyLoss()
     train_loss_fn = train_loss_fn.to(device=device)
     validate_loss_fn = nn.CrossEntropyLoss().to(device=device)
-    if args.lwal_loss:
-        validate_loss_fn = train_loss_fn
+    # if args.lwal_loss:
+    #     validate_loss_fn = train_loss_fn
 
     # setup checkpoint saver and eval metric tracking
     eval_metric = args.eval_metric if loader_eval is not None else 'loss'
@@ -1234,9 +1234,9 @@ def validate(
                     output = output.unfold(0, reduce_factor, reduce_factor).mean(dim=2)
                     target = target[0:target.size(0):reduce_factor]
 
-                print('output', output.shape)
-                print('target', target.shape)
-                print('softmax', F.log_softmax(output, dim=-1).shape)
+                # print('output', output.shape)
+                # print('target', target.shape)
+                # print('softmax', F.log_softmax(output, dim=-1).shape)
                 loss = loss_fn(output, target)
                 # if args.lwal_loss:
                 #     loss = loss_fn.test(output, target)
