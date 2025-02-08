@@ -187,7 +187,6 @@ class LearningWithAdaptiveLabels(nn.Module):
         # self.current_step += 1
 
         # input_loss = cross_entropy_pull_loss(x, target, self.learnt_y)
-        print('target', target)
         input_loss = st_cce_forward(x, target)
         # em_loss = 10.0 * structure_loss + 1.0 * input_loss
         em_loss = input_loss
