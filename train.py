@@ -1237,10 +1237,11 @@ def validate(
                     loss = loss_fn.test(output, target)
                 else:
                     loss = loss_fn(output, target)
-            if args.lwal_loss:
-                acc1, acc5 = loss_fn.accuracy(output, target, learnt_y)
-            else:
-                acc1, acc5 = utils.accuracy(output, target, topk=(1, 5))
+            acc1, acc5 = utils.accuracy(output, target, topk=(1, 5))
+            # if args.lwal_loss:
+            #     acc1, acc5 = loss_fn.accuracy(output, target, learnt_y)
+            # else:
+            #     acc1, acc5 = utils.accuracy(output, target, topk=(1, 5))
 
             if args.distributed:
                 reduced_loss = utils.reduce_tensor(loss.data, args.world_size)

@@ -199,17 +199,21 @@ class LearningWithAdaptiveLabels(nn.Module):
         structure_loss=0.0
 
         # input_loss = cross_entropy_pull_loss(x, target, self.learnt_y)
+        print('x', x.shape)
+        print('target', target.shape)
+        print('softmax', F.log_softmax(x, dim=-1).shape)
         input_loss = st_cce_forward(x, target)
         # em_loss = 10.0 * structure_loss + 1.0 * input_loss
         em_loss = input_loss
 
         return em_loss
     
-    def accuracy(self, output, target, learnt_y, topk=(1,)):
-        """Computes the 1-accuracy for lwal loss."""
-        x = output.to(torch.float32)
-        # x = self.fc(output)
-        one_hot_target = torch.nn.functional.one_hot(target, num_classes=10)
-        pred_y, true_y = cross_entropy_nn_pred(x, one_hot_target, learnt_y)
-        acc1 = (pred_y == true_y).float().mean() * 100.
-        return acc1, 0.0
+    # def accuracy(self, output, target, learnt_y, topk=(1,)):
+    #     """Computes the 1-accuracy for lwal loss."""
+    #     x = output.to(torch.float32)
+    #     # x = self.fc(output)
+    #     # one_hot_target = torch.nn.functional.one_hot(target, num_classes=10)
+    #     # pred_y, true_y = cross_entropy_nn_pred(x, one_hot_target, learnt_y)
+
+    #     acc1 = (pred_y == true_y).float().mean() * 100.
+    #     return acc1, 0.0
