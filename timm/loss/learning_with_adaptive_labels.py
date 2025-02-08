@@ -180,6 +180,10 @@ class LearningWithAdaptiveLabels(nn.Module):
         #     self.learnt_y = update_learnt_centroids(self.learnt_y, centroids)
         #     structure_loss = cos_repel_loss_z_optimized(x, target)
         # self.current_step += 1
+        
+        print('x', x.shape)
+        print('target', target.shape)
+        print('softmax', F.log_softmax(x, dim=-1).shape)
 
         # input_loss = cross_entropy_pull_loss(x, target, self.learnt_y)
         input_loss = st_cce_forward(x, target)
