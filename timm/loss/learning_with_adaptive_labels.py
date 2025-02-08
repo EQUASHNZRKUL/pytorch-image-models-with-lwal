@@ -71,16 +71,11 @@ def binary_cross_entropy_pull_loss(enc_x, in_y, learnt_y):
     # Take the mean over all classes and samples
     return bce_loss.mean()
 
-def ls_cce_forward(x: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
-    logprobs = F.log_softmax(x, dim=-1)
-    nll_loss = -logprobs.gather(dim=-1, index=target.unsqueeze(1))
-    nll_loss = nll_loss.squeeze(1)
-    smooth_loss = -logprobs.mean(dim=-1)
-    loss = 0.9 * nll_loss + 0.1 * smooth_loss
-    return loss.mean()
-
 
 def st_cce_forward(x: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
+        print('x', x.shape)
+        print('target', target.shape)
+        print('softmax', F.log_softmax(x, dim=-1).shape)
         loss = torch.sum(-target * F.log_softmax(x, dim=-1), dim=-1)
         return loss.mean()
 
