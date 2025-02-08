@@ -71,6 +71,14 @@ def binary_cross_entropy_pull_loss(enc_x, in_y, learnt_y):
     # Take the mean over all classes and samples
     return bce_loss.mean()
 
+def ls_cce_forward(x: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
+    logprobs = F.log_softmax(x, dim=-1)
+    nll_loss = -logprobs.gather(dim=-1, index=target.unsqueeze(1))
+    nll_loss = nll_loss.squeeze(1)
+    smooth_loss = -logprobs.mean(dim=-1)
+    loss = 0.9 * nll_loss + 0.1 * smooth_loss
+    return loss.mean()
+
 
 def cos_repel_loss_z(z, in_y, num_labels):
     # Normalize the vectors
@@ -173,7 +181,8 @@ class LearningWithAdaptiveLabels(nn.Module):
             structure_loss = cos_repel_loss_z_optimized(x, target)
         self.current_step += 1
 
-        input_loss = cross_entropy_pull_loss(x, target, self.learnt_y)
+        # input_loss = cross_entropy_pull_loss(x, target, self.learnt_y)
+        input_loss = ls_cce_forward(x, target)
         # em_loss = 10.0 * structure_loss + 1.0 * input_loss
         em_loss = input_loss
 
