@@ -80,6 +80,11 @@ def ls_cce_forward(x: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
     return loss.mean()
 
 
+def st_cce_forward(self, x: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
+        loss = torch.sum(-target * F.log_softmax(x, dim=-1), dim=-1)
+        return loss.mean()
+
+
 def cos_repel_loss_z(z, in_y, num_labels):
     # Normalize the vectors
     norm_z = z / torch.norm(z, dim=1, keepdim=True)
@@ -183,7 +188,7 @@ class LearningWithAdaptiveLabels(nn.Module):
 
         # input_loss = cross_entropy_pull_loss(x, target, self.learnt_y)
         print('target', target)
-        input_loss = ls_cce_forward(x, target)
+        input_loss = st_cce_forward(x, target)
         # em_loss = 10.0 * structure_loss + 1.0 * input_loss
         em_loss = input_loss
 
