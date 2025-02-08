@@ -165,21 +165,21 @@ class LearningWithAdaptiveLabels(nn.Module):
         return self.learnt_y
 
     def forward(self, x: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
-        batch_size = x.shape[0]
-        assert batch_size == target.shape[0]
-        # x = self.fc(x)
+        # batch_size = x.shape[0]
+        # assert batch_size == target.shape[0]
+        # # x = self.fc(x)
 
-        # lwal loss is 10 * structure_loss + input_loss
-        z = x.clone()
-        self.device = x.device
-        num_labels = self.num_classes
-        structure_loss=0.0
-        if self.current_step % self.stationary_steps == 0:
-            centroids = compute_centroids(z, target, self.num_classes)
-            centroids = centroids.detach()
-            self.learnt_y = update_learnt_centroids(self.learnt_y, centroids)
-            structure_loss = cos_repel_loss_z_optimized(x, target)
-        self.current_step += 1
+        # # lwal loss is 10 * structure_loss + input_loss
+        # z = x.clone()
+        # self.device = x.device
+        # num_labels = self.num_classes
+        # structure_loss=0.0
+        # if self.current_step % self.stationary_steps == 0:
+        #     centroids = compute_centroids(z, target, self.num_classes)
+        #     centroids = centroids.detach()
+        #     self.learnt_y = update_learnt_centroids(self.learnt_y, centroids)
+        #     structure_loss = cos_repel_loss_z_optimized(x, target)
+        # self.current_step += 1
 
         # input_loss = cross_entropy_pull_loss(x, target, self.learnt_y)
         print('target', target)
