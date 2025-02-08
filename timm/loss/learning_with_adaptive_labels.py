@@ -80,7 +80,7 @@ def ls_cce_forward(x: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
     return loss.mean()
 
 
-def st_cce_forward(self, x: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
+def st_cce_forward(x: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
         loss = torch.sum(-target * F.log_softmax(x, dim=-1), dim=-1)
         return loss.mean()
 
@@ -204,7 +204,8 @@ class LearningWithAdaptiveLabels(nn.Module):
         self.device = x.device
         structure_loss=0.0
 
-        input_loss = cross_entropy_pull_loss(x, target, self.learnt_y)
+        # input_loss = cross_entropy_pull_loss(x, target, self.learnt_y)
+        input_loss = st_cce_forward(x, target)
         # em_loss = 10.0 * structure_loss + 1.0 * input_loss
         em_loss = input_loss
 
