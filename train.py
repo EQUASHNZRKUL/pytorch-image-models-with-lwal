@@ -825,8 +825,8 @@ def main():
         train_loss_fn = nn.CrossEntropyLoss()
     train_loss_fn = train_loss_fn.to(device=device)
     validate_loss_fn = nn.CrossEntropyLoss().to(device=device)
-    # if args.lwal_loss:
-    #     validate_loss_fn = train_loss_fn
+    if args.lwal_loss:
+        validate_loss_fn = train_loss_fn
 
     # setup checkpoint saver and eval metric tracking
     eval_metric = args.eval_metric if loader_eval is not None else 'loss'
