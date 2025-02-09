@@ -50,7 +50,7 @@ def cross_entropy_pull_loss(enc_x, in_y, learnt_y):
     logits = F.log_softmax(-1.0 * enc_x_dist, dim=1)
 
     # Cross-entropy loss with label smoothing
-    cce = torch.nn.CrossEntropyLoss(label_smoothing=1e-6)
+    # cce = torch.nn.CrossEntropyLoss(label_smoothing=1e-6)
     # Compute the loss (input needs to be logits and class indices or probabilities)
     # loss = cce(logits, in_y)
     # return loss
@@ -194,9 +194,14 @@ class LearningWithAdaptiveLabels(nn.Module):
         # x = self.fc(x)
 
         # lwal loss is 10 * structure_loss + input_loss
-        z = x.clone()
-        self.device = x.device
-        structure_loss=0.0
+        # z = x.clone()
+        # self.device = x.device
+        # structure_loss=0.0
+
+        print('enc_x', x.shape)
+        print('enc_x_dist', pairwise_dist(x, self.learnt_y).shape)
+        print('in_y', target.shape)
+        print('logits', F.log_softmax(-1.0 * pairwise_dist(x, self.learnt_y), dim=1).shape)
 
         input_loss = cross_entropy_pull_loss(x, target, self.learnt_y)
         # input_loss = st_cce_forward(x, target)
