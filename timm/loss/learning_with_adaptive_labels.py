@@ -198,12 +198,13 @@ class LearningWithAdaptiveLabels(nn.Module):
         # self.device = x.device
         # structure_loss=0.0
 
-        print('enc_x', x.shape)
-        print('enc_x_dist', pairwise_dist(x, self.learnt_y).shape)
-        print('in_y', target.shape)
-        print('logits', F.log_softmax(-1.0 * pairwise_dist(x, self.learnt_y), dim=1).shape)
+        # print('enc_x', x.shape)
+        # print('enc_x_dist', pairwise_dist(x, self.learnt_y).shape)
+        # print('in_y', target.shape)
+        # print('logits', F.log_softmax(-1.0 * pairwise_dist(x, self.learnt_y), dim=1).shape)
+        one_hot_target = torch.nn.functional.one_hot(target, num_classes=10)
 
-        input_loss = cross_entropy_pull_loss(x, target, self.learnt_y)
+        input_loss = cross_entropy_pull_loss(x, one_hot_target, self.learnt_y)
         # input_loss = st_cce_forward(x, target)
         # em_loss = 10.0 * structure_loss + 1.0 * input_loss
         em_loss = input_loss
