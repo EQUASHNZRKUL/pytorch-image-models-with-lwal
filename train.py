@@ -825,8 +825,8 @@ def main():
         train_loss_fn = nn.CrossEntropyLoss()
     train_loss_fn = train_loss_fn.to(device=device)
     validate_loss_fn = nn.CrossEntropyLoss().to(device=device)
-    # if args.lwal_loss:
-    #     validate_loss_fn = train_loss_fn
+    if args.lwal_loss:
+        validate_loss_fn = train_loss_fn
 
     # setup checkpoint saver and eval metric tracking
     eval_metric = args.eval_metric if loader_eval is not None else 'loss'
@@ -1237,16 +1237,16 @@ def validate(
                 # print('output', output.shape)
                 # print('target', target.shape)
                 # print('softmax', F.log_softmax(output, dim=-1).shape)
-                loss = loss_fn(output, target)
-                # if args.lwal_loss:
-                #     loss = loss_fn.test(output, target)
-                # else:
-                #     loss = loss_fn(output, target)
-            acc1, acc5 = utils.accuracy(output, target, topk=(1, 5))
-            # if args.lwal_loss:
-            #     acc1, acc5 = loss_fn.accuracy(output, target, learnt_y)
-            # else:
-            #     acc1, acc5 = utils.accuracy(output, target, topk=(1, 5))
+                # loss = loss_fn(output, target)
+                if args.lwal_loss:
+                    loss = loss_fn.test(output, target)
+                else:
+                    loss = loss_fn(output, target)
+            # acc1, acc5 = utils.accuracy(output, target, topk=(1, 5))
+            if args.lwal_loss:
+                acc1, acc5 = loss_fn.accuracy(output, target, learnt_y)
+            else:
+                acc1, acc5 = utils.accuracy(output, target, topk=(1, 5))
 
             if args.distributed:
                 reduced_loss = utils.reduce_tensor(loss.data, args.world_size)
