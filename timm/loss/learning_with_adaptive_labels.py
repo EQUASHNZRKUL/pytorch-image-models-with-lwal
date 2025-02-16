@@ -48,15 +48,19 @@ def cross_entropy_pull_loss(enc_x, in_y, learnt_y):
 
     # Compute logits by applying softmax to the negative distances
 
-    # loss = torch.sum(-in_y * F.log_softmax(-enc_x_dist, dim=-1), dim=-1)
-    # return loss.mean()
+    # # loss = torch.sum(-in_y * F.log_softmax(-enc_x_dist, dim=-1), dim=-1)
+    # # return loss.mean()
 
-    z = F.softmax(-1.0 * enc_x_dist, dim=1)
-    reduced = z / torch.sum(z)
+    # z = F.softmax(-1.0 * enc_x_dist, dim=1)
+    # reduced = z / torch.sum(z)
 
-    # Cross-entropy loss with label smoothing
-    loss = -torch.sum(in_y * torch.log(reduced), dim=-1)
-    return loss
+    # # Cross-entropy loss with label smoothing
+    # loss = -torch.sum(in_y * torch.log(reduced), dim=-1)
+    # return loss
+    
+    logits = F.log_softmax(-1.0 * enc_x_dist, dim=1)
+    loss = torch.sum(-in_y * logits, dim=-1)
+    return loss.mean()
 
 
 def binary_cross_entropy_pull_loss(enc_x, in_y, learnt_y):
