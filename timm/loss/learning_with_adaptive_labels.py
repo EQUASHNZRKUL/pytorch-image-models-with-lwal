@@ -47,15 +47,16 @@ def cross_entropy_pull_loss(enc_x, in_y, learnt_y):
     enc_x_dist = pairwise_dist(enc_x, learnt_y)
 
     # Compute logits by applying softmax to the negative distances
-    logits = F.log_softmax(-1.0 * enc_x_dist, dim=1)
+
+    # loss = torch.sum(-in_y * F.log_softmax(-enc_x_dist, dim=-1), dim=-1)
+    # return loss.mean()
+
+    z = F.softmax(-1.0 * enc_x_dist, dim=1)
+    reduced = z / torch.sum(z)
 
     # Cross-entropy loss with label smoothing
-    # cce = torch.nn.CrossEntropyLoss(label_smoothing=1e-6)
-    # Compute the loss (input needs to be logits and class indices or probabilities)
-    # loss = cce(logits, in_y)
-    # return loss
-    loss = torch.sum(-in_y * logits, dim=-1)
-    return loss.mean()
+    loss = -torch.sum(in_y * torch.log(reduced), dim=-1)
+    return loss
 
 
 def binary_cross_entropy_pull_loss(enc_x, in_y, learnt_y):
@@ -177,6 +178,7 @@ class LearningWithAdaptiveLabels(nn.Module):
         if self.current_step % self.stationary_steps == 0:
             centroids = compute_centroids(z, target, self.num_classes)
             centroids = centroids.detach()
+            print('updating centroids')
             self.learnt_y = update_learnt_centroids(self.learnt_y, centroids)
             structure_loss = cos_repel_loss_z_optimized(x, target)
         self.current_step += 1

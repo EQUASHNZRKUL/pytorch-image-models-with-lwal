@@ -51,13 +51,15 @@ class TimmLwal():
         return new_learnt_y
 
     def cross_entropy_pull_loss(self, enc_x, in_y, learnt_y):
+        # Compute pairwise distances between enc_x and learnt_y
         enc_x_dist = self.pairwise_dist(enc_x, learnt_y)
-        probs = F.softmax(-1.0 * enc_x_dist, dim=1)
-        logits = torch.log(probs + 1e-9)
-        cce = torch.nn.CrossEntropyLoss(label_smoothing=1e-6)
-        loss = cce(logits, in_y)
 
-        return loss
+        # Compute logits by applying softmax to the negative distances
+        logits = F.log_softmax(-1.0 * enc_x_dist, dim=1)
+
+        # Cross-entropy loss with label smoothing
+        loss = torch.sum(-in_y * logits, dim=-1)
+        return loss.mean()
 
     def binary_cross_entropy_pull_loss(self, enc_x, in_y, learnt_y):
         enc_x_dist = self.pairwise_dist(enc_x, learnt_y)
@@ -88,8 +90,9 @@ class TimmLwal():
     def forward(self, x: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
         batch_size = x.shape[0]
         assert batch_size == target.shape[0]
+        # # x = self.fc(x)
 
-        # lwal loss is 10 * structure_loss + input_loss
+        # # lwal loss is 10 * structure_loss + input_loss
         z = x.clone()
         self.device = x.device
         num_labels = self.num_classes
@@ -102,6 +105,7 @@ class TimmLwal():
         self.current_step += 1
 
         input_loss = self.cross_entropy_pull_loss(x, target, self.learnt_y)
+        # input_loss = st_cce_forward(x, target)
         # em_loss = 10.0 * structure_loss + 1.0 * input_loss
         em_loss = input_loss
 
@@ -220,10 +224,13 @@ def create_dummy_tensors(shape):
 
 print("Creating dummy random values")
 
-tf_z, torch_z = create_dummy_tensors((4, 100))
-tf_in_y, torch_in_y = create_dummy_tensors((4, 10))
-tf_learnt_y, torch_learnt_y = create_dummy_tensors((10, 100))
-tf_centroids, torch_centroids = create_dummy_tensors((10, 100))
+batch_size=2
+num_classes=4
+latent_dim=5
+tf_z, torch_z = create_dummy_tensors((batch_size, latent_dim))
+tf_in_y, torch_in_y = create_dummy_tensors((batch_size, num_classes))
+tf_learnt_y, torch_learnt_y = create_dummy_tensors((num_classes, latent_dim))
+tf_centroids, torch_centroids = create_dummy_tensors((num_classes, latent_dim))
 
 print("Testing pairwise_dist")
 tf_out = XiaoLwal().pairwise_dist(tf_z, tf_learnt_y)
@@ -234,11 +241,13 @@ print("Testing compute_centroids")
 tf_out = XiaoLwal().compute_centroids(tf_z, tf_in_y)
 torch_out = TimmLwal().compute_centroids(torch_z, torch_in_y)
 assert(are_tensors_equivalent(tf_out, torch_out))
+print(tf_out, torch_out)
 
 print("Testing update_learnt_centroids")
 tf_out = XiaoLwal().update_learnt_centroids(tf_learnt_y, tf_centroids)
 torch_out = TimmLwal().update_learnt_centroids(torch_learnt_y, torch_centroids)
 assert(are_tensors_equivalent(tf_out, torch_out))
+print(tf_out, torch_out)
 
 print("Testing pull loss")
 tf_out = XiaoLwal().ce_pull_loss(tf_z, tf_in_y, tf_learnt_y)
