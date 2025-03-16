@@ -182,7 +182,7 @@ class LearningWithAdaptiveLabels(nn.Module):
         if self.current_step % self.stationary_steps == 0:
             centroids = compute_centroids(z, target, self.num_classes)
             centroids = centroids.detach()
-            print('updating centroids')
+            # print('updating centroids')
             self.learnt_y = update_learnt_centroids(self.learnt_y, centroids)
             structure_loss = cos_repel_loss_z_optimized(x, target)
         self.current_step += 1
@@ -211,8 +211,9 @@ class LearningWithAdaptiveLabels(nn.Module):
         one_hot_target = torch.nn.functional.one_hot(target, num_classes=10)
 
         input_loss = cross_entropy_pull_loss(x, one_hot_target, self.learnt_y)
+        structure_loss = cos_repel_loss_z_optimized(x, one_hot_target)
         # input_loss = st_cce_forward(x, target)
-        # em_loss = 10.0 * structure_loss + 1.0 * input_loss
+        em_loss = 10.0 * structure_loss + 1.0 * input_loss
         em_loss = input_loss
 
         return em_loss
