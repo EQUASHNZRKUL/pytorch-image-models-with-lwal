@@ -217,7 +217,7 @@ class LearningWithAdaptiveLabels(nn.Module):
         structure_loss = cos_repel_loss_z_optimized(x, one_hot_target)
         # input_loss = st_cce_forward(x, target)
         em_loss = 10.0 * structure_loss + 1.0 * input_loss
-        em_loss = input_loss
+        # em_loss = input_loss
 
         return em_loss
     
