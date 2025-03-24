@@ -215,8 +215,8 @@ class LearningWithAdaptiveLabels(nn.Module):
         batch_size = x.shape[0]
         assert batch_size == target.shape[0]
 
-        print('max element', self.maximum_element)
-        print('max norm', self.maximum_norm)
+        # print('max element', self.maximum_element)
+        # print('max norm', self.maximum_norm)
         one_hot_target = torch.nn.functional.one_hot(target, num_classes=10)
 
         input_loss = cross_entropy_pull_loss(x, one_hot_target, self.learnt_y)
