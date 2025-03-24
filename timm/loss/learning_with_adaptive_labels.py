@@ -195,8 +195,14 @@ class LearningWithAdaptiveLabels(nn.Module):
         if self.current_step == 4800:
             print('learnt_y (near the end of training)')
             print(self.learnt_y)
+        
         self.maximum_element = max(self.maximum_element, get_max_element(z))
         self.maximum_norm = max(self.maximum_norm, get_max_element(calculate_vector_norms(z)))
+        if (self.current_step % 195) == 194:
+            print('z', self.maximum_element, self.maximum_norm)
+            print('learnt_y', 
+                  get_max_element(self.learnt_y), 
+                  get_max_element(calculate_vector_norms(self.learnt_y)))
 
         input_loss = cross_entropy_pull_loss(x, target, self.learnt_y)
         # input_loss = st_cce_forward(x, target)
