@@ -19,6 +19,22 @@ def pairwise_dist(A, B):
     D = torch.sqrt(torch.maximum(na - 2 * torch.matmul(A, B.T) + nb, torch.tensor(1e-12)))
     return D
 
+def pairwise_cosine_similarity(A, B):
+    # Normalize the vectors
+    A_norm = torch.linalg.norm(A, dim=1, keepdim=True)
+    B_norm = torch.linalg.norm(B, dim=1, keepdim=True)
+
+    # Avoid division by zero
+    A_norm = torch.where(A_norm == 0, torch.tensor(1e-12, device=A.device), A_norm)
+    B_norm = torch.where(B_norm == 0, torch.tensor(1e-12, device=B.device), B_norm)
+
+    A_normalized = A / A_norm
+    B_normalized = B / B_norm
+
+    # Calculate cosine similarity
+    similarity = torch.matmul(A_normalized, B_normalized.T)
+    return similarity
+
 def normalize_tensor_vectors_vmap(tensor):
     if not isinstance(tensor, torch.Tensor):
         raise TypeError("Input must be a PyTorch tensor.")

@@ -12,7 +12,7 @@ import tensorflow as tf
 import numpy as np
 
 class TimmLwal():
-    def __init__(self, current_step=0, stationary_steps=0, learnt_y=None, num_classes=10):
+    def __init__(self, current_step=0, stationary_steps=0, learnt_y=None, num_classes=4):
         self.current_step=current_step
         self.stationary_steps=stationary_steps
         self.learnt_y=learnt_y
@@ -27,6 +27,23 @@ class TimmLwal():
 
         D = torch.sqrt(torch.maximum(na - 2 * torch.matmul(A, B.T) + nb, torch.tensor(1e-12)))
         return D
+    
+    def pairwise_cosine_similarity(self, A, B):
+
+        # Normalize the vectors
+        A_norm = torch.linalg.norm(A, dim=1, keepdim=True)
+        B_norm = torch.linalg.norm(B, dim=1, keepdim=True)
+
+        # Avoid division by zero
+        A_norm = torch.where(A_norm == 0, torch.tensor(1e-12, device=A.device), A_norm)
+        B_norm = torch.where(B_norm == 0, torch.tensor(1e-12, device=B.device), B_norm)
+
+        A_normalized = A / A_norm
+        B_normalized = B / B_norm
+
+        # Calculate cosine similarity
+        similarity = torch.matmul(A_normalized, B_normalized.T)
+        return similarity
 
     def compute_centroids(self, z, in_y, num_classes=10):
         true_y = torch.argmax(in_y, dim=1)
@@ -222,6 +239,13 @@ def create_dummy_tensors(shape):
     torch_arr = torch.tensor(tf_arr.numpy())
     return tf_arr, torch_arr
 
+def calculate_vector_norms(vectors):
+    norms = torch.linalg.norm(vectors, dim=1, keepdim=True)
+    return norms
+
+def get_max_element(tensor):
+    return torch.max(tensor)
+
 print("Creating dummy random values")
 
 batch_size=2
@@ -237,35 +261,56 @@ tf_out = XiaoLwal().pairwise_dist(tf_z, tf_learnt_y)
 torch_out = TimmLwal().pairwise_dist(torch_z, torch_learnt_y)
 assert(are_tensors_equivalent(tf_out, torch_out))
 
+print("Testing pairwise_cosine_similarity")
+cosine_out = TimmLwal().pairwise_cosine_similarity(torch_z, torch_learnt_y)
+print(torch_out)
+print(cosine_out)
+
 print("Testing compute_centroids")
 tf_out = XiaoLwal().compute_centroids(tf_z, tf_in_y)
 torch_out = TimmLwal().compute_centroids(torch_z, torch_in_y)
 assert(are_tensors_equivalent(tf_out, torch_out))
-print(tf_out, torch_out)
+# print(tf_out, torch_out)
 
 print("Testing update_learnt_centroids")
 tf_out = XiaoLwal().update_learnt_centroids(tf_learnt_y, tf_centroids)
 torch_out = TimmLwal().update_learnt_centroids(torch_learnt_y, torch_centroids)
 assert(are_tensors_equivalent(tf_out, torch_out))
-print(tf_out, torch_out)
+# print(tf_out, torch_out)
 
 print("Testing pull loss")
 tf_out = XiaoLwal().ce_pull_loss(tf_z, tf_in_y, tf_learnt_y)
 torch_out = TimmLwal().cross_entropy_pull_loss(torch_z, torch_in_y, torch_learnt_y)
-print(tf_out, torch_out)
+# print(tf_out, torch_out)
 assert(are_tensors_equivalent(tf_out, torch_out))
 
 print("Testing repel loss")
 tf_out = XiaoLwal().cos_repel_loss_z(tf_z, tf_in_y, 10)
 torch_out = TimmLwal().cos_repel_loss_z_optimized(torch_z, torch_in_y)
-print(tf_out, torch_out)
+# print(tf_out, torch_out)
 assert(are_tensors_equivalent(tf_out, torch_out))
 
 print("Testing forward()")
 tf_out = XiaoLwal(current_step=0, warmup_steps=0, stationary_steps=2, rloss="cos_repel_loss_z", learnt_y=tf_learnt_y).forward(tf_z, tf_in_y)
 torch_out = TimmLwal(current_step=0, stationary_steps=2, learnt_y=torch_learnt_y).forward(torch_z, torch_in_y)
-print(tf_out, torch_out)
+# print(tf_out, torch_out)
 assert(are_tensors_equivalent(tf_out, torch_out))
+
+print("Testing exploding centroids")
+BATCH_SIZE=500
+LATENT_DIM=100
+NUM_CLASSES=10
+_, learnt_y = create_dummy_tensors((NUM_CLASSES, LATENT_DIM))
+_, centroids = create_dummy_tensors((NUM_CLASSES, LATENT_DIM))
+for i in range(1000):
+    _, z = create_dummy_tensors((BATCH_SIZE, LATENT_DIM))
+    _, in_y = create_dummy_tensors((BATCH_SIZE, NUM_CLASSES))
+    centroids = TimmLwal().compute_centroids(z, in_y, NUM_CLASSES)
+    learnt_y = TimmLwal().update_learnt_centroids(learnt_y, centroids)
+    if i % 100 == 0:
+        print(i, 
+              get_max_element(learnt_y).item(), 
+              get_max_element(calculate_vector_norms(learnt_y)).item())
 
 # class LearningWithAdaptiveLabels(nn.Module):
 #     """ BCE with optional one-hot from dense targets, label smoothing, thresholding
