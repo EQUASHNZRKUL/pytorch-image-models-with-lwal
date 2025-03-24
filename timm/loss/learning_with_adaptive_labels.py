@@ -19,6 +19,28 @@ def pairwise_dist(A, B):
     D = torch.sqrt(torch.maximum(na - 2 * torch.matmul(A, B.T) + nb, torch.tensor(1e-12)))
     return D
 
+def normalize_tensor_vectors_vmap(tensor):
+    if not isinstance(tensor, torch.Tensor):
+        raise TypeError("Input must be a PyTorch tensor.")
+
+    if tensor.ndim != 2:
+        raise ValueError("Input tensor must be 2D.")
+
+    def normalize_single_vector(vector):
+        norm = torch.linalg.norm(vector)
+        if norm == 0:
+          raise ValueError("Vector with zero norm. Cannot normalize.")
+        return vector / norm
+
+    return torch.vmap(normalize_single_vector)(tensor)
+
+def calculate_vector_norms(vectors):
+    norms = torch.linalg.norm(vectors, dim=1, keepdim=True)
+    return norms
+
+def get_max_element(tensor):
+    return torch.max(tensor)
+
 def compute_centroids(z, in_y, num_classes=10):
     true_y = torch.argmax(in_y, dim=1)
     class_mask = torch.nn.functional.one_hot(true_y, num_classes=num_classes).float()
@@ -39,60 +61,27 @@ def update_learnt_centroids(learnt_y, centroids, decay_factor=1.0):
     )
 
     new_learnt_y = decay_factor * updated_centroids + (1 - decay_factor) * learnt_y
+    # new_learnt_y = normalize_tensor_vectors_vmap(new_learnt_y)
 
     return new_learnt_y
 
 def cross_entropy_pull_loss(enc_x, in_y, learnt_y):
     # Compute pairwise distances between enc_x and learnt_y
     enc_x_dist = pairwise_dist(enc_x, learnt_y)
-
-    # Compute logits by applying softmax to the negative distances
-
-    # # loss = torch.sum(-in_y * F.log_softmax(-enc_x_dist, dim=-1), dim=-1)
-    # # return loss.mean()
-
-    # z = F.softmax(-1.0 * enc_x_dist, dim=1)
-    # reduced = z / torch.sum(z)
-
-    # # Cross-entropy loss with label smoothing
-    # loss = -torch.sum(in_y * torch.log(reduced), dim=-1)
-    # return loss
     
     logits = F.log_softmax(-1.0 * enc_x_dist, dim=1)
     loss = torch.sum(-in_y * logits, dim=-1)
     return loss.mean()
 
 
-def binary_cross_entropy_pull_loss(enc_x, in_y, learnt_y):
-    # Compute pairwise distances between enc_x and learnt_y
-    enc_x_dist = pairwise_dist(enc_x, learnt_y)
-
-    # Compute logits by applying softmax to the negative distances
-    logits = F.softmax(-1.0 * enc_x_dist, dim=1)
-    
-    # Compute BCE loss for each class independently
-    bce_loss = F.binary_cross_entropy_with_logits(logits, in_y, reduction='none')
-    
-    # Take the mean over all classes and samples
-    return bce_loss.mean()
-
-
 def st_cce_forward(x: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
-        # print('x', x.shape)
-        # print('target', target.shape)
-        # print('softmax', F.log_softmax(x, dim=-1).shape)
-        loss = torch.sum(-target * F.log_softmax(x, dim=-1), dim=-1)
-        return loss.mean()
+    loss = torch.sum(-target * F.log_softmax(x, dim=-1), dim=-1)
+    return loss.mean()
 
 
 def cos_repel_loss_z(z, in_y, num_labels):
-    # Normalize the vectors
     norm_z = z / torch.norm(z, dim=1, keepdim=True)
-
-    # Compute cosine distance (dot product of normalized vectors)
     cos_dist = torch.matmul(norm_z, norm_z.T)
-
-    # Get the class labels (assumes one-hot encoded input)
     true_y = torch.argmax(in_y, dim=1).unsqueeze(1)
 
     # Create a mask for same-class pairs
@@ -165,6 +154,8 @@ class LearningWithAdaptiveLabels(nn.Module):
         self.stationary_steps = stationary_steps
         self.current_step = current_step
         self.learnt_y = torch.eye(num_classes, latent_dim, device=device)
+        self.maximum_element = 0
+        self.maximum_norm = 0
     
     def get_learnt_y(self):
         return self.learnt_y
@@ -172,9 +163,7 @@ class LearningWithAdaptiveLabels(nn.Module):
     def forward(self, x: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
         batch_size = x.shape[0]
         assert batch_size == target.shape[0]
-        # # x = self.fc(x)
 
-        # # lwal loss is 10 * structure_loss + input_loss
         z = x.clone()
         self.device = x.device
         num_labels = self.num_classes
@@ -185,32 +174,27 @@ class LearningWithAdaptiveLabels(nn.Module):
             # print('updating centroids')
             self.learnt_y = update_learnt_centroids(self.learnt_y, centroids)
             structure_loss = cos_repel_loss_z_optimized(x, target)
+        self.current_step += 1
+
         if self.current_step == 4800:
             print('learnt_y (near the end of training)')
             print(self.learnt_y)
-        self.current_step += 1
+        self.maximum_element = max(self.maximum_element, get_max_element(z))
+        self.maximum_norm = max(self.maximum_norm, get_max_element(calculate_vector_norms(z)))
 
         input_loss = cross_entropy_pull_loss(x, target, self.learnt_y)
         # input_loss = st_cce_forward(x, target)
         em_loss = 10.0 * structure_loss + 1.0 * input_loss
-        em_loss = input_loss
+        # em_loss = input_loss
 
         return em_loss, self.learnt_y
     
     def test(self, x: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
         batch_size = x.shape[0]
         assert batch_size == target.shape[0]
-        # x = self.fc(x)
 
-        # lwal loss is 10 * structure_loss + input_loss
-        # z = x.clone()
-        # self.device = x.device
-        # structure_loss=0.0
-
-        # print('enc_x', x.shape)
-        # print('enc_x_dist', pairwise_dist(x, self.learnt_y).shape)
-        # print('in_y', target.shape)
-        # print('logits', F.log_softmax(-1.0 * pairwise_dist(x, self.learnt_y), dim=1).shape)
+        print('max element', self.maximum_element)
+        print('max norm', self.maximum_norm)
         one_hot_target = torch.nn.functional.one_hot(target, num_classes=10)
 
         input_loss = cross_entropy_pull_loss(x, one_hot_target, self.learnt_y)
