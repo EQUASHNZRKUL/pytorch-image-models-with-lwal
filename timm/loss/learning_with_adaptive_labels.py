@@ -36,16 +36,8 @@ def pairwise_cosine_similarity(A, B):
     return similarity
 
 def normalize_tensor_vectors_vmap(tensor):
-    if not isinstance(tensor, torch.Tensor):
-        raise TypeError("Input must be a PyTorch tensor.")
-
-    if tensor.ndim != 2:
-        raise ValueError("Input tensor must be 2D.")
-
     def normalize_single_vector(vector):
         norm = torch.linalg.norm(vector)
-        if norm == 0:
-          raise ValueError("Vector with zero norm. Cannot normalize.")
         return vector / norm
 
     return torch.vmap(normalize_single_vector)(tensor)
