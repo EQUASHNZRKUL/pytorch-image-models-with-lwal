@@ -77,13 +77,14 @@ def update_learnt_centroids(learnt_y, centroids, decay_factor=1.0):
     )
 
     new_learnt_y = decay_factor * updated_centroids + (1 - decay_factor) * learnt_y
-    # new_learnt_y = normalize_tensor_vectors_vmap(new_learnt_y)
+    new_learnt_y = normalize_tensor_vectors_vmap(new_learnt_y)
 
     return new_learnt_y
 
 def cross_entropy_pull_loss(enc_x, in_y, learnt_y):
     # Compute pairwise distances between enc_x and learnt_y
-    enc_x_dist = pairwise_dist(enc_x, learnt_y)
+    # enc_x_dist = pairwise_dist(enc_x, learnt_y)
+    enc_x_dist = pairwise_cosine_similarity(enc_x, learnt_y)
     
     logits = F.log_softmax(-1.0 * enc_x_dist, dim=1)
     loss = torch.sum(-in_y * logits, dim=-1)
