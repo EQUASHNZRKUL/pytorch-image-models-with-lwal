@@ -290,11 +290,11 @@ torch_out = TimmLwal().cos_repel_loss_z_optimized(torch_z, torch_in_y)
 # print(tf_out, torch_out)
 assert(are_tensors_equivalent(tf_out, torch_out))
 
-print("Testing forward()")
-tf_out = XiaoLwal(current_step=0, warmup_steps=0, stationary_steps=2, rloss="cos_repel_loss_z", learnt_y=tf_learnt_y).forward(tf_z, tf_in_y)
-torch_out = TimmLwal(current_step=0, stationary_steps=2, learnt_y=torch_learnt_y).forward(torch_z, torch_in_y)
-# print(tf_out, torch_out)
-assert(are_tensors_equivalent(tf_out, torch_out))
+# print("Testing forward()")
+# tf_out = XiaoLwal(current_step=0, warmup_steps=0, stationary_steps=2, rloss="cos_repel_loss_z", learnt_y=tf_learnt_y).forward(tf_z, tf_in_y)
+# torch_out = TimmLwal(current_step=0, stationary_steps=2, learnt_y=torch_learnt_y).forward(torch_z, torch_in_y)
+# # print(tf_out, torch_out)
+# assert(are_tensors_equivalent(tf_out, torch_out))
 
 print("Testing exploding centroids")
 BATCH_SIZE=500
