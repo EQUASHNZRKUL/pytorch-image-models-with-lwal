@@ -36,11 +36,7 @@ def pairwise_cosine_similarity(A, B):
     return similarity
 
 def normalize_tensor_vectors_vmap(tensor):
-    def normalize_single_vector(vector):
-        norm = torch.linalg.norm(vector)
-        return vector / norm
-
-    return torch.vmap(normalize_single_vector)(tensor)
+    return tensor / torch.linalg.norm(tensor, dim=1, keepdim=True)
 
 def calculate_vector_norms(vectors):
     norms = torch.linalg.norm(vectors, dim=1, keepdim=True)
@@ -183,7 +179,7 @@ class LearningWithAdaptiveLabels(nn.Module):
             centroids = centroids.detach()
             # print('updating centroids')
             self.learnt_y = update_learnt_centroids(self.learnt_y, centroids)
-            structure_loss = cos_repel_loss_z_optimized(x, target)
+            # structure_loss = cos_repel_loss_z_optimized(x, target)
         self.current_step += 1
 
         if self.current_step == 4800:
@@ -197,7 +193,7 @@ class LearningWithAdaptiveLabels(nn.Module):
             print('learnt_y', 
                   get_max_element(self.learnt_y), 
                   get_max_element(calculate_vector_norms(self.learnt_y)))
-            cossim = pairwise_cosine_similarity(normalize_tensor_vectors_vmap(x), self.learnt_y)
+            cossim = pairwise_cosine_similarity(normalize_tensor_vectors_vmap(z), self.learnt_y)
             print('cosine sim', 
                   get_max_element(cossim),
                   get_max_element(calculate_vector_norms(cossim)))
