@@ -307,6 +307,12 @@ group.add_argument('--lwal-loss', action='store_true', default=False,
                    help='Enable Lwal Loss. Use with `--stationary-steps`.')
 group.add_argument('--stationary-steps', type=int, default=1,
                    help='Number of steps between Lwal updates.')
+group.add_argument('--decay-factor', type=float, default=1.0, 
+                   help="Decay constant for centroid changes")
+group.add_argument('--structure-loss-weight', type=float, default=1.0, 
+                   help="How much weight to give structure loss in em_loss calculation")
+group.add_argument('--pairwise-fn', type=str, default='dist', 
+                   help="Whether to use pairwise_dist or pairwise_cos.")
 group.add_argument('--reprob', type=float, default=0., metavar='PCT',
                    help='Random erase prob (default: 0.)')
 group.add_argument('--remode', type=str, default='pixel',
@@ -793,6 +799,9 @@ def main():
             stationary_steps=args.stationary_steps,
             device=device,
             current_step=1,
+            decay_factor=args.decay_factor,
+            structure_loss_weight=args.structure_loss_weight,
+            pairwise_fn=args.lwal_pairwise_fn,
             # BCE params
             # target_threshold=args.bce_target_thresh,
             # sum_classes=args.bce_sum,

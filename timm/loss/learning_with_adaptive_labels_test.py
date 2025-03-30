@@ -54,7 +54,7 @@ class TimmLwal():
         centroids = sum_z / count_per_class.unsqueeze(1)
         return centroids
 
-    def update_learnt_centroids(self, learnt_y, centroids, decay_factor=1.0):
+    def update_learnt_centroids_new(self, learnt_y, centroids, decay_factor=1.0):
         nonzero_mask = torch.any(centroids != 0, dim=1)
 
         updated_centroids = torch.where(
@@ -66,6 +66,19 @@ class TimmLwal():
         new_learnt_y = decay_factor * updated_centroids + (1 - decay_factor) * learnt_y
 
         return new_learnt_y
+
+    def update_learnt_centroids(self, learnt_y, centroids, decay_factor=1.0):
+        num_classes, latent_dim = learnt_y.shape  # Get dimensions
+        new_learnt_y = []
+        
+        for i in range(num_classes):
+            enc_y = centroids[i]
+            if torch.count_nonzero(enc_y) == 0:  # Check if all zero
+                enc_y = learnt_y[i]
+            new_enc_y = decay_factor * enc_y + (1 - decay_factor) * learnt_y[i]
+            new_learnt_y.append(new_enc_y)
+        
+        return torch.stack(new_learnt_y)
 
     def cross_entropy_pull_loss(self, enc_x, in_y, learnt_y):
         # Compute pairwise distances between enc_x and learnt_y
@@ -275,6 +288,12 @@ assert(are_tensors_equivalent(tf_out, torch_out))
 print("Testing update_learnt_centroids")
 tf_out = XiaoLwal().update_learnt_centroids(tf_learnt_y, tf_centroids)
 torch_out = TimmLwal().update_learnt_centroids(torch_learnt_y, torch_centroids)
+assert(are_tensors_equivalent(tf_out, torch_out))
+# print(tf_out, torch_out)
+
+print("Testing update_learnt_centroids")
+tf_out = XiaoLwal().update_learnt_centroids(tf_learnt_y, tf_centroids)
+torch_out = TimmLwal().update_learnt_centroids_new(torch_learnt_y, torch_centroids)
 assert(are_tensors_equivalent(tf_out, torch_out))
 # print(tf_out, torch_out)
 

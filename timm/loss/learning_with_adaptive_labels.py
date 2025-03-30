@@ -69,14 +69,18 @@ def update_learnt_centroids(learnt_y, centroids, decay_factor=1.0):
 
     return new_learnt_y
 
-def cross_entropy_pull_loss(enc_x, in_y, learnt_y):
-    # Compute pairwise distances between enc_x and learnt_y
-    # enc_x_dist = pairwise_dist(normalize_tensor_vectors_vmap(enc_x), learnt_y)
-    enc_x_dist = pairwise_cosine_similarity(normalize_tensor_vectors_vmap(enc_x), learnt_y)
+def update_learnt_centroids_old(learnt_y, centroids, decay_factor=1.0):
+    num_classes, latent_dim = learnt_y.shape  # Get dimensions
+    new_learnt_y = []
     
-    logits = F.log_softmax(-1.0 * enc_x_dist, dim=1)
-    loss = torch.sum(-in_y * logits, dim=-1)
-    return loss.mean()
+    for i in range(num_classes):
+        enc_y = centroids[i]
+        if torch.count_nonzero(enc_y) == 0:  # Check if all zero
+            enc_y = learnt_y[i]
+        new_enc_y = decay_factor * enc_y + (1 - decay_factor) * learnt_y[i]
+        new_learnt_y.append(new_enc_y)
+    
+    return torch.stack(new_learnt_y)
 
 
 def st_cce_forward(x: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
@@ -119,21 +123,6 @@ def cos_repel_loss_z_optimized(z, in_y):
     return torch.mean(cos_dist * class_mask)
 
 
-def cross_entropy_nn_pred(enc_x, in_y, learnt_y):
-    """Cross Entropy NN Prediction based on learnt_y."""
-
-    # enc_x_to_learnt_y_dist = pairwise_dist(enc_x, learnt_y)
-    enc_x_to_learnt_y_dist = pairwise_cosine_similarity(normalize_tensor_vectors_vmap(enc_x), learnt_y)
-    logits = F.softmax(-1. * enc_x_to_learnt_y_dist, dim=1)
-    # print('logits', logits.shape)
-    preds = torch.argmax(logits, dim=1)
-    # print('in_y', in_y.shape)
-    # print('in_y values', in_y)
-
-    true_y = torch.argmax(in_y, dim=1)
-    return preds, true_y
-
-
 class LearningWithAdaptiveLabels(nn.Module):
     """ BCE with optional one-hot from dense targets, label smoothing, thresholding
     NOTE for experiments comparing CE to BCE /w label smoothing, may remove
@@ -145,6 +134,9 @@ class LearningWithAdaptiveLabels(nn.Module):
             stationary_steps: int,
             device: torch.device,
             current_step: int = 1,
+            decay_factor: float = 1.0,
+            structure_loss_weight: float = 10.0,
+            pairwise_fn: str = 'dist',
             num_features: int = 2048,
             # BCE args
             # smoothing=0.1,
@@ -160,11 +152,32 @@ class LearningWithAdaptiveLabels(nn.Module):
         self.stationary_steps = stationary_steps
         self.current_step = current_step
         self.learnt_y = torch.eye(num_classes, latent_dim, device=device)
+        self.decay_factor = decay_factor
+        self.structure_loss_weight = structure_loss_weight
+        self.pairwise_fn = pairwise_cosine_similarity if pairwise_fn == 'cos' else pairwise_dist
         self.maximum_element = 0
         self.maximum_norm = 0
     
     def get_learnt_y(self):
         return self.learnt_y
+
+    def cross_entropy_pull_loss(self, enc_x, in_y, learnt_y):
+        # Compute pairwise distances between enc_x and learnt_y
+        # enc_x_dist = pairwise_dist(normalize_tensor_vectors_vmap(enc_x), learnt_y)
+        enc_x_dist = self.pairiwse_fn(normalize_tensor_vectors_vmap(enc_x), learnt_y)
+        
+        logits = F.log_softmax(-1.0 * enc_x_dist, dim=1)
+        loss = torch.sum(-in_y * logits, dim=-1)
+        return loss.mean()
+
+    def cross_entropy_nn_pred(self, enc_x, in_y, learnt_y):
+        """Cross Entropy NN Prediction based on learnt_y."""
+        enc_x_to_learnt_y_dist = self.pairwise_fn(normalize_tensor_vectors_vmap(enc_x), learnt_y)
+        logits = F.softmax(-1. * enc_x_to_learnt_y_dist, dim=1)
+        preds = torch.argmax(logits, dim=1)
+
+        true_y = torch.argmax(in_y, dim=1)
+        return preds, true_y
 
     def forward(self, x: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
         batch_size = x.shape[0]
@@ -178,7 +191,7 @@ class LearningWithAdaptiveLabels(nn.Module):
             centroids = compute_centroids(z, target, self.num_classes)
             centroids = centroids.detach()
             # print('updating centroids')
-            self.learnt_y = update_learnt_centroids(self.learnt_y, centroids)
+            self.learnt_y = update_learnt_centroids(self.learnt_y, centroids, self.decay_factor)
             # structure_loss = cos_repel_loss_z_optimized(x, target)
         self.current_step += 1
 
@@ -198,7 +211,7 @@ class LearningWithAdaptiveLabels(nn.Module):
                   get_max_element(cossim),
                   get_max_element(calculate_vector_norms(cossim)))
 
-        input_loss = cross_entropy_pull_loss(x, target, self.learnt_y)
+        input_loss = self.cross_entropy_pull_loss(x, target, self.learnt_y)
         # input_loss = st_cce_forward(x, target)
         em_loss = 10.0 * structure_loss + 1.0 * input_loss
         # em_loss = input_loss
@@ -213,7 +226,7 @@ class LearningWithAdaptiveLabels(nn.Module):
         # print('max norm', self.maximum_norm)
         one_hot_target = torch.nn.functional.one_hot(target, num_classes=10)
 
-        input_loss = cross_entropy_pull_loss(x, one_hot_target, self.learnt_y)
+        input_loss = self.cross_entropy_pull_loss(x, one_hot_target, self.learnt_y)
         structure_loss = cos_repel_loss_z_optimized(x, one_hot_target)
         # input_loss = st_cce_forward(x, target)
         em_loss = 10.0 * structure_loss + 1.0 * input_loss
