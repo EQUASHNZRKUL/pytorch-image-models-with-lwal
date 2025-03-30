@@ -20,7 +20,7 @@ def pairwise_dist(A, B):
     return D
 
 def pairwise_cosine_similarity(A, B):
-    # Normalize the vectors
+    # Get norms of the vectors
     A_norm = torch.linalg.norm(A, dim=1, keepdim=True)
     B_norm = torch.linalg.norm(B, dim=1, keepdim=True)
 
@@ -75,7 +75,7 @@ def update_learnt_centroids(learnt_y, centroids, decay_factor=1.0):
 
 def cross_entropy_pull_loss(enc_x, in_y, learnt_y):
     # Compute pairwise distances between enc_x and learnt_y
-    # enc_x_dist = pairwise_dist(enc_x, learnt_y)
+    # enc_x_dist = pairwise_dist(normalize_tensor_vectors_vmap(enc_x), learnt_y)
     enc_x_dist = pairwise_cosine_similarity(enc_x, learnt_y)
     
     logits = F.log_softmax(-1.0 * enc_x_dist, dim=1)
@@ -126,7 +126,8 @@ def cos_repel_loss_z_optimized(z, in_y):
 def cross_entropy_nn_pred(enc_x, in_y, learnt_y):
     """Cross Entropy NN Prediction based on learnt_y."""
 
-    enc_x_to_learnt_y_dist = pairwise_dist(enc_x, learnt_y)
+    # enc_x_to_learnt_y_dist = pairwise_dist(enc_x, learnt_y)
+    enc_x_to_learnt_y_dist = pairwise_cosine_similarity(enc_x, learnt_y)
     logits = F.softmax(-1. * enc_x_to_learnt_y_dist, dim=1)
     # print('logits', logits.shape)
     preds = torch.argmax(logits, dim=1)

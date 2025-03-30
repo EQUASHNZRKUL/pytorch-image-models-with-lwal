@@ -235,7 +235,7 @@ def are_tensors_equivalent(tf_tensor, torch_tensor, rtol=1e-5, atol=1e-8):
     return np.allclose(tf_array, torch_array, rtol=rtol, atol=atol)
 
 def create_dummy_tensors(shape):
-    tf_arr = tf.random.uniform(shape)
+    tf_arr = tf.random.uniform(shape, minval=-3, maxval=3)
     torch_arr = torch.tensor(tf_arr.numpy())
     return tf_arr, torch_arr
 
