@@ -311,7 +311,7 @@ group.add_argument('--decay-factor', type=float, default=1.0,
                    help="Decay constant for centroid changes")
 group.add_argument('--structure-loss-weight', type=float, default=1.0, 
                    help="How much weight to give structure loss in em_loss calculation")
-group.add_argument('--pairwise-fn', type=str, default='dist', 
+group.add_argument('--lwal-pairwise-fn', type=str, default='dist', 
                    help="Whether to use pairwise_dist or pairwise_cos.")
 group.add_argument('--reprob', type=float, default=0., metavar='PCT',
                    help='Random erase prob (default: 0.)')
