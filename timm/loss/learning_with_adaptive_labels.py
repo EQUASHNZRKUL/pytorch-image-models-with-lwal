@@ -195,9 +195,10 @@ class LearningWithAdaptiveLabels(nn.Module):
             # structure_loss = cos_repel_loss_z_optimized(x, target)
         self.current_step += 1
 
-        if self.current_step == 4800:
+        if self.current_step == 976:
             print('learnt_y (near the end of training)')
             print(self.learnt_y)
+            raise ValueError()
         
         self.maximum_element = max(self.maximum_element, get_max_element(z))
         self.maximum_norm = max(self.maximum_norm, get_max_element(calculate_vector_norms(z)))
