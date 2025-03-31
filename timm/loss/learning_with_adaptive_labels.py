@@ -209,7 +209,8 @@ class LearningWithAdaptiveLabels(nn.Module):
             cossim = pairwise_cosine_similarity(normalize_tensor_vectors_vmap(z), self.learnt_y)
             print('cosine sim', 
                   get_max_element(cossim),
-                  get_max_element(calculate_vector_norms(cossim)))
+                  get_max_element(calculate_vector_norms(cossim)),
+                  cossim)
 
         input_loss = self.cross_entropy_pull_loss(x, target, self.learnt_y)
         # input_loss = st_cce_forward(x, target)
