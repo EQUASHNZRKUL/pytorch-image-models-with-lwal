@@ -164,7 +164,7 @@ class LearningWithAdaptiveLabels(nn.Module):
     def cross_entropy_pull_loss(self, enc_x, in_y, learnt_y):
         # Compute pairwise distances between enc_x and learnt_y
         # enc_x_dist = pairwise_dist(normalize_tensor_vectors_vmap(enc_x), learnt_y)
-        enc_x_dist = self.pairiwse_fn(normalize_tensor_vectors_vmap(enc_x), learnt_y)
+        enc_x_dist = self.pairwise_fn(normalize_tensor_vectors_vmap(enc_x), learnt_y)
         
         logits = F.log_softmax(-1.0 * enc_x_dist, dim=1)
         loss = torch.sum(-in_y * logits, dim=-1)
