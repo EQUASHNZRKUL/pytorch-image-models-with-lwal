@@ -83,11 +83,6 @@ def update_learnt_centroids_old(learnt_y, centroids, decay_factor=1.0):
     return torch.stack(new_learnt_y)
 
 
-def st_cce_forward(x: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
-    loss = torch.sum(-target * F.log_softmax(x, dim=-1), dim=-1)
-    return loss.mean()
-
-
 def cos_repel_loss_z(z, in_y, num_labels):
     norm_z = z / torch.norm(z, dim=1, keepdim=True)
     cos_dist = torch.matmul(norm_z, norm_z.T)
@@ -165,8 +160,8 @@ class LearningWithAdaptiveLabels(nn.Module):
         # Compute pairwise distances between enc_x and learnt_y
         # enc_x_dist = pairwise_dist(normalize_tensor_vectors_vmap(enc_x), learnt_y)
         enc_x_dist = self.pairwise_fn(normalize_tensor_vectors_vmap(enc_x), learnt_y)
-        
-        logits = F.log_softmax(-1.0 * enc_x_dist, dim=1)
+        factor = 1.0 if self.pairwise_fn == 'cos' else -1.0
+        logits = F.log_softmax(factor * enc_x_dist, dim=1)
         loss = torch.sum(-in_y * logits, dim=-1)
         return loss.mean()
 
@@ -214,8 +209,7 @@ class LearningWithAdaptiveLabels(nn.Module):
                   cossim)
 
         input_loss = self.cross_entropy_pull_loss(x, target, self.learnt_y)
-        # input_loss = st_cce_forward(x, target)
-        em_loss = 10.0 * structure_loss + 1.0 * input_loss
+        em_loss = self.structure_loss_weight * structure_loss + 1.0 * input_loss
         # em_loss = input_loss
 
         return em_loss, self.learnt_y
@@ -230,8 +224,7 @@ class LearningWithAdaptiveLabels(nn.Module):
 
         input_loss = self.cross_entropy_pull_loss(x, one_hot_target, self.learnt_y)
         structure_loss = cos_repel_loss_z_optimized(x, one_hot_target)
-        # input_loss = st_cce_forward(x, target)
-        em_loss = 10.0 * structure_loss + 1.0 * input_loss
+        em_loss = self.structure_loss_weight * structure_loss + 1.0 * input_loss
         # em_loss = input_loss
 
         return em_loss
