@@ -33,7 +33,7 @@ def pairwise_cosine_similarity(A, B):
 
     # Calculate cosine similarity
     similarity = torch.matmul(A_normalized, B_normalized.T)
-    return similarity
+    return 1-similarity
 
 def normalize_tensor_vectors_vmap(tensor):
     return tensor / torch.linalg.norm(tensor, dim=1, keepdim=True)
@@ -45,7 +45,7 @@ def calculate_vector_norms(vectors):
 def get_max_element(tensor):
     return torch.max(tensor)
 
-def compute_centroids(z, in_y, num_classes=10):
+def compute_centroids_new(z, in_y, num_classes=10):
     true_y = torch.argmax(in_y, dim=1)
     class_mask = torch.nn.functional.one_hot(true_y, num_classes=num_classes).float()
     sum_z = torch.matmul(class_mask.T, z)
@@ -53,6 +53,25 @@ def compute_centroids(z, in_y, num_classes=10):
     count_per_class = torch.clamp(count_per_class, min=1e-12)
     centroids = sum_z / count_per_class.unsqueeze(1)
     return centroids
+
+
+def compute_centroids(z, in_y, num_classes=10):
+    true_y = torch.argmax(in_y, dim=1)
+    centroids = []
+    
+    for i in range(num_classes):
+        class_i_mask = (true_y == i).float().unsqueeze(1)  # Create mask
+        num_class_i = class_i_mask.sum()
+        
+        if num_class_i == 0:
+            centroids.append(torch.zeros(z.shape[1], device=z.device))
+        else:
+            class_i_mask = torch.ones_like(z) * class_i_mask
+            masked_z_i = z * class_i_mask
+            centroid_i = masked_z_i.sum(dim=0) / num_class_i
+            centroids.append(centroid_i)
+    
+    return torch.stack(centroids)
 
 
 def update_learnt_centroids(learnt_y, centroids, decay_factor=1.0):
@@ -160,16 +179,16 @@ class LearningWithAdaptiveLabels(nn.Module):
         # Compute pairwise distances between enc_x and learnt_y
         # enc_x_dist = pairwise_dist(normalize_tensor_vectors_vmap(enc_x), learnt_y)
         enc_x_dist = self.pairwise_fn(normalize_tensor_vectors_vmap(enc_x), learnt_y)
-        factor = 1.0 if self.pairwise_fn == 'cos' else -1.0
-        logits = F.softmax(factor * enc_x_dist, dim=1)
+        # factor = 1.0 if self.pairwise_fn == 'cos' else -1.0
+        logits = F.log_softmax(-1.0 * enc_x_dist, dim=1)
         loss = torch.sum(-in_y * logits, dim=-1)
         return loss.mean()
 
     def cross_entropy_nn_pred(self, enc_x, in_y, learnt_y):
         """Cross Entropy NN Prediction based on learnt_y."""
         enc_x_to_learnt_y_dist = self.pairwise_fn(normalize_tensor_vectors_vmap(enc_x), learnt_y)
-        factor = 1.0 if self.pairwise_fn == 'cos' else -1.0
-        logits = F.softmax(factor * enc_x_to_learnt_y_dist, dim=1)
+        # factor = 1.0 if self.pairwise_fn == 'cos' else -1.0
+        logits = F.log_softmax(-1.0 * enc_x_to_learnt_y_dist, dim=1)
         preds = torch.argmax(logits, dim=1)
 
         true_y = torch.argmax(in_y, dim=1)
