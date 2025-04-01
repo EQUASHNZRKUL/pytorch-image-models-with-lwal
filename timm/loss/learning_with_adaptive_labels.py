@@ -74,7 +74,7 @@ def compute_centroids(z, in_y, num_classes=10):
     return torch.stack(centroids)
 
 
-def update_learnt_centroids(learnt_y, centroids, decay_factor=1.0):
+def update_learnt_centroids(learnt_y, centroids, decay_factor=1.0, norm_learnt_y: bool):
     nonzero_mask = torch.any(centroids != 0, dim=1)
 
     updated_centroids = torch.where(
@@ -84,7 +84,8 @@ def update_learnt_centroids(learnt_y, centroids, decay_factor=1.0):
     )
 
     new_learnt_y = decay_factor * updated_centroids + (1 - decay_factor) * learnt_y
-    new_learnt_y = normalize_tensor_vectors_vmap(new_learnt_y)
+    if norm_learnt_y:
+        new_learnt_y = normalize_tensor_vectors_vmap(new_learnt_y)
 
     return new_learnt_y
 
@@ -206,7 +207,7 @@ class LearningWithAdaptiveLabels(nn.Module):
             centroids = compute_centroids(z, target, self.num_classes)
             centroids = centroids.detach()
             # print('updating centroids')
-            self.learnt_y = update_learnt_centroids(self.learnt_y, centroids, self.decay_factor)
+            self.learnt_y = update_learnt_centroids(self.learnt_y, centroids, self.decay_factor, self.pairwise_fn == 'cos')
             # structure_loss = cos_repel_loss_z_optimized(x, target)
         self.current_step += 1
 
@@ -222,11 +223,23 @@ class LearningWithAdaptiveLabels(nn.Module):
             print('learnt_y', 
                   get_max_element(self.learnt_y), 
                   get_max_element(calculate_vector_norms(self.learnt_y)))
-            cossim = pairwise_cosine_similarity(normalize_tensor_vectors_vmap(z), self.learnt_y)
-            print('cosine sim', 
-                  get_max_element(cossim),
-                  get_max_element(calculate_vector_norms(cossim)),
-                  cossim)
+            if self.pairwise_fn == 'cos':
+                cossim = pairwise_cosine_similarity(normalize_tensor_vectors_vmap(z), self.learnt_y)
+                print('cosine sim', 
+                    get_max_element(cossim),
+                    get_max_element(calculate_vector_norms(cossim)),
+                    cossim)
+            else:
+                dists = pairwise_dist(z, self.learnt_y)
+                normed_dists = pairwise_dist(normalize_tensor_vectors_vmap(z), normalize_tensor_vectors_vmap(self.learnt_y))
+                print('dists', 
+                      get_max_element(dists),
+                      get_max_element(calculate_vector_norms(dists)),
+                      dists)
+                print('normed_dists', 
+                      get_max_element(normed_dists),
+                      get_max_element(calculate_vector_norms(normed_dists)),
+                      normed_dists)
 
         input_loss = self.cross_entropy_pull_loss(x, target, self.learnt_y)
         em_loss = self.structure_loss_weight * structure_loss + 1.0 * input_loss
