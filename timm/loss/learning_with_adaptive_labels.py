@@ -74,7 +74,7 @@ def compute_centroids(z, in_y, num_classes=10):
     return torch.stack(centroids)
 
 
-def update_learnt_centroids(learnt_y, centroids, decay_factor=1.0, norm_learnt_y: bool):
+def update_learnt_centroids(learnt_y, centroids, decay_factor=1.0, norm_learnt_y: bool=False):
     nonzero_mask = torch.any(centroids != 0, dim=1)
 
     updated_centroids = torch.where(
