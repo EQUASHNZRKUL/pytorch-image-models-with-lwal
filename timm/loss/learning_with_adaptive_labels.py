@@ -161,14 +161,15 @@ class LearningWithAdaptiveLabels(nn.Module):
         # enc_x_dist = pairwise_dist(normalize_tensor_vectors_vmap(enc_x), learnt_y)
         enc_x_dist = self.pairwise_fn(normalize_tensor_vectors_vmap(enc_x), learnt_y)
         factor = 1.0 if self.pairwise_fn == 'cos' else -1.0
-        logits = F.log_softmax(factor * enc_x_dist, dim=1)
+        logits = F.softmax(factor * enc_x_dist, dim=1)
         loss = torch.sum(-in_y * logits, dim=-1)
         return loss.mean()
 
     def cross_entropy_nn_pred(self, enc_x, in_y, learnt_y):
         """Cross Entropy NN Prediction based on learnt_y."""
         enc_x_to_learnt_y_dist = self.pairwise_fn(normalize_tensor_vectors_vmap(enc_x), learnt_y)
-        logits = F.softmax(-1. * enc_x_to_learnt_y_dist, dim=1)
+        factor = 1.0 if self.pairwise_fn == 'cos' else -1.0
+        logits = F.softmax(factor * enc_x_to_learnt_y_dist, dim=1)
         preds = torch.argmax(logits, dim=1)
 
         true_y = torch.argmax(in_y, dim=1)
