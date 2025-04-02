@@ -169,6 +169,7 @@ class LearningWithAdaptiveLabels(nn.Module):
         self.learnt_y = torch.eye(num_classes, latent_dim, device=device)
         self.decay_factor = decay_factor
         self.structure_loss_weight = structure_loss_weight
+        self.pairwise_fn_name = pairwise_fn
         self.pairwise_fn = pairwise_cosine_similarity if pairwise_fn == 'cos' else pairwise_dist
         self.maximum_element = 0
         self.maximum_norm = 0
@@ -181,6 +182,7 @@ class LearningWithAdaptiveLabels(nn.Module):
         # enc_x_dist = pairwise_dist(normalize_tensor_vectors_vmap(enc_x), learnt_y)
         enc_x_dist = self.pairwise_fn(normalize_tensor_vectors_vmap(enc_x), learnt_y)
         # factor = 1.0 if self.pairwise_fn == 'cos' else -1.0
+        # -1 ( 1 - cossim ) = cossim - 1
         logits = F.log_softmax(-1.0 * enc_x_dist, dim=1)
         loss = torch.sum(-in_y * logits, dim=-1)
         return loss.mean()
@@ -223,7 +225,7 @@ class LearningWithAdaptiveLabels(nn.Module):
             print('learnt_y', 
                   get_max_element(self.learnt_y), 
                   get_max_element(calculate_vector_norms(self.learnt_y)))
-            if self.pairwise_fn == 'cos':
+            if self.pairwise_fn == pairwise_cosine_similarity:
                 cossim = pairwise_cosine_similarity(normalize_tensor_vectors_vmap(z), self.learnt_y)
                 print('cosine sim', 
                     get_max_element(cossim),
