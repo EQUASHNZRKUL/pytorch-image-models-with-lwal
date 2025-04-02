@@ -24,9 +24,9 @@ def pairwise_cosine_similarity(A, B):
     A_norm = torch.linalg.norm(A, dim=1, keepdim=True)
     B_norm = torch.linalg.norm(B, dim=1, keepdim=True)
 
-    # Avoid division by zero
-    A_norm = torch.where(A_norm == 0, torch.tensor(1e-12, device=A.device), A_norm)
-    B_norm = torch.where(B_norm == 0, torch.tensor(1e-12, device=B.device), B_norm)
+    # # Avoid division by zero
+    # A_norm = torch.where(A_norm == 0, torch.tensor(1e-12, device=A.device), A_norm)
+    # B_norm = torch.where(B_norm == 0, torch.tensor(1e-12, device=B.device), B_norm)
 
     A_normalized = A / A_norm
     B_normalized = B / B_norm
@@ -180,7 +180,8 @@ class LearningWithAdaptiveLabels(nn.Module):
     def cross_entropy_pull_loss(self, enc_x, in_y, learnt_y):
         # Compute pairwise distances between enc_x and learnt_y
         # enc_x_dist = pairwise_dist(normalize_tensor_vectors_vmap(enc_x), learnt_y)
-        enc_x_dist = self.pairwise_fn(normalize_tensor_vectors_vmap(enc_x), learnt_y)
+        # enc_x_dist = self.pairwise_fn(normalize_tensor_vectors_vmap(enc_x), learnt_y)
+        enc_x_dist = self.pairwise_fn(enc_x, learnt_y)
         # factor = 1.0 if self.pairwise_fn == 'cos' else -1.0
         # -1 ( 1 - cossim ) = cossim - 1
         logits = F.log_softmax(-1.0 * enc_x_dist, dim=1)
