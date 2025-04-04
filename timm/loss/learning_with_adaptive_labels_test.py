@@ -29,21 +29,20 @@ class TimmLwal():
         return D
     
     def pairwise_cosine_similarity(self, A, B):
-
-        # Normalize the vectors
+        # Get norms of the vectors
         A_norm = torch.linalg.norm(A, dim=1, keepdim=True)
         B_norm = torch.linalg.norm(B, dim=1, keepdim=True)
 
-        # Avoid division by zero
-        A_norm = torch.where(A_norm == 0, torch.tensor(1e-12, device=A.device), A_norm)
-        B_norm = torch.where(B_norm == 0, torch.tensor(1e-12, device=B.device), B_norm)
+        # # Avoid division by zero
+        # A_norm = torch.where(A_norm == 0, torch.tensor(1e-12, device=A.device), A_norm)
+        # B_norm = torch.where(B_norm == 0, torch.tensor(1e-12, device=B.device), B_norm)
 
         A_normalized = A / A_norm
         B_normalized = B / B_norm
 
         # Calculate cosine similarity
         similarity = torch.matmul(A_normalized, B_normalized.T)
-        return similarity
+        return 1-similarity
 
     def compute_centroids(self, z, in_y, num_classes=10):
         true_y = torch.argmax(in_y, dim=1)
@@ -330,70 +329,17 @@ for i in range(1000):
         print(i, 
               get_max_element(learnt_y).item(), 
               get_max_element(calculate_vector_norms(learnt_y)).item())
+print(z.shape, learnt_y.shape)
+print(TimmLwal().pairwise_cosine_similarity(z, learnt_y))
 
-# class LearningWithAdaptiveLabels(nn.Module):
-#     """ BCE with optional one-hot from dense targets, label smoothing, thresholding
-#     NOTE for experiments comparing CE to BCE /w label smoothing, may remove
-#     """
-#     def __init__(
-#             self,
-#             latent_dim: int,
-#             num_classes: int,
-#             stationary_steps: int,
-#             device: torch.device,
-#             current_step: int = 1,
-#             # BCE args
-#             # smoothing=0.1,
-#             # target_threshold: Optional[float] = None,
-#             # weight: Optional[torch.Tensor] = None,
-#             # reduction: str = 'mean',
-#             # sum_classes: bool = False,
-#             # pos_weight: Optional[Union[torch.Tensor, float]] = None,
-#     ):
-#         super(LearningWithAdaptiveLabels, self).__init__()
-#         self.latent_dim = latent_dim
-#         self.num_classes = num_classes
-#         self.stationary_steps = stationary_steps
-#         self.current_step = current_step
-#         self.learnt_y = torch.eye(num_classes, latent_dim, device=device)
-    
-#     def get_learnt_y(self):
-#         return self.learnt_y
 
-#     def forward(self, x: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
-#         batch_size = x.shape[0]
-#         assert batch_size == target.shape[0]
-
-#         # lwal loss is 10 * structure_loss + input_loss
-#         z = x.clone()
-#         self.device = x.device
-#         num_labels = self.num_classes
-#         # print("printing grads")
-#         # print('x', x.grad_fn)
-#         # print('z', z.grad_fn)
-#         if self.current_step % self.stationary_steps == 0:
-#             centroids = compute_centroids(z, target, self.num_classes)
-#             centroids = centroids.detach()
-#             self.learnt_y = update_learnt_centroids(self.learnt_y, centroids, self.device)
-#             # print('centroids', centroids.grad_fn)
-#             # print('compute_centroids ran!', self.current_step, self.stationary_steps, centroids)
-#             # print('new embeddings: ', self.learnt_y)
-#         self.current_step += 1
-
-#         input_loss = cross_entropy_pull_loss(x, target, self.learnt_y)
-#         # input_loss = binary_cross_entropy_pull_loss(x, target, self.learnt_y)
-#         # structure_loss = cos_repel_loss_z(x, target, num_labels)
-#         structure_loss = cos_repel_loss_z_optimized(x, target)
-#         if self.current_step % 195 == 0:
-#             print('input_loss: ', input_loss)
-#             print('structure_loss: ', structure_loss)
-#         # em_loss = 10.0 * structure_loss + 1.0 * input_loss
-#         em_loss = input_loss
-
-#         # print('num_labels', num_labels)
-#         # print('learnt_y', self.learnt_y.grad_fn)
-#         # print('input_loss', input_loss.grad_fn)
-#         # print('structure_loss', structure_loss.grad_fn)
-#         # print('em_loss', em_loss.grad_fn)
-        
-#         return em_loss, self.learnt_y
+print('Testing cossim')
+z = torch.tensor(np.array([[6.7383e-02,  8.3008e-02,  1.3428e-02, 9.0332e-03, -1.5430e-01,  1.9727e-01],
+              [-5.1514e-02,  8.3008e-02, -1.0449e-01, -1.9336e-01, -2.4414e-03,  7.4463e-03],
+              [-3.8477e-01,  2.2217e-02,  8.0078e-02,  -1.8848e-01, 3.6621e-04,  1.8945e-01]]))
+learnt_y = torch.tensor(np.array([[2.7586e-01, -7.0674e-02, -1.9153e-01, -8.1438e-02, -1.5261e-01, -3.5059e-02],
+                     [2.8019e-01,  2.1880e-01,  5.5808e-02, -4.3636e-02,  1.5164e-01, 1.4643e-01],
+                     [2.2926e-01, -4.7721e-02,  2.9392e-01,  6.4710e-02,  3.2113e-01, -4.6744e-02],
+                     [8.6757e-02,  2.1305e-01, -5.0460e-01, -6.7577e-02,  3.5086e-01, 1.2281e-01,]]))
+print(z.shape, learnt_y.shape)
+print(-TimmLwal().pairwise_cosine_similarity(z, learnt_y))

@@ -74,7 +74,7 @@ def compute_centroids(z, in_y, num_classes=10):
     return torch.stack(centroids)
 
 
-def update_learnt_centroids(learnt_y, centroids, decay_factor=1.0, norm_learnt_y: bool=False):
+def update_learnt_centroids_new(learnt_y, centroids, decay_factor=1.0, norm_learnt_y: bool=False):
     nonzero_mask = torch.any(centroids != 0, dim=1)
 
     updated_centroids = torch.where(
@@ -89,7 +89,7 @@ def update_learnt_centroids(learnt_y, centroids, decay_factor=1.0, norm_learnt_y
 
     return new_learnt_y
 
-def update_learnt_centroids_old(learnt_y, centroids, decay_factor=1.0):
+def update_learnt_centroids(learnt_y, centroids, decay_factor=1.0):
     num_classes, latent_dim = learnt_y.shape  # Get dimensions
     new_learnt_y = []
     
@@ -214,7 +214,7 @@ class LearningWithAdaptiveLabels(nn.Module):
             # structure_loss = cos_repel_loss_z_optimized(x, target)
         self.current_step += 1
 
-        if self.current_step == 976:
+        if self.current_step == 4876:
             print('learnt_y (near the end of training)')
             print(self.learnt_y)
             raise ValueError()
@@ -230,8 +230,8 @@ class LearningWithAdaptiveLabels(nn.Module):
             if self.pairwise_fn == pairwise_cosine_similarity:
                 cossim = pairwise_cosine_similarity(normalize_tensor_vectors_vmap(z), self.learnt_y)
                 print('cosine sim', 
-                    get_max_element(cossim),
-                    get_max_element(calculate_vector_norms(cossim)),
+                    get_max_element(-cossim),
+                    get_max_element(calculate_vector_norms(-cossim)),
                     cossim)
             else:
                 dists = pairwise_dist(z, self.learnt_y)
