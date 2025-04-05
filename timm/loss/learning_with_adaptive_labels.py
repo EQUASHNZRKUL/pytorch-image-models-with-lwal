@@ -89,7 +89,7 @@ def update_learnt_centroids_new(learnt_y, centroids, decay_factor=1.0, norm_lear
 
     return new_learnt_y
 
-def update_learnt_centroids(learnt_y, centroids, decay_factor=1.0):
+def update_learnt_centroids(learnt_y, centroids, decay_factor=1.0, norm_learnt_y: bool=False):
     num_classes, latent_dim = learnt_y.shape  # Get dimensions
     new_learnt_y = []
     
@@ -99,6 +99,9 @@ def update_learnt_centroids(learnt_y, centroids, decay_factor=1.0):
             enc_y = learnt_y[i]
         new_enc_y = decay_factor * enc_y + (1 - decay_factor) * learnt_y[i]
         new_learnt_y.append(new_enc_y)
+
+    if norm_learnt_y:
+        new_learnt_y = normalize_tensor_vectors_vmap(new_learnt_y)
     
     return torch.stack(new_learnt_y)
 
