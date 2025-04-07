@@ -156,6 +156,8 @@ class LearningWithAdaptiveLabels(nn.Module):
             structure_loss_weight: float = 10.0,
             pairwise_fn: str = 'dist',
             num_features: int = 2048,
+            verbose: bool = False,
+            early_stop: bool = Optional[int],
             # BCE args
             # smoothing=0.1,
             # target_threshold: Optional[float] = None,
@@ -174,6 +176,8 @@ class LearningWithAdaptiveLabels(nn.Module):
         self.structure_loss_weight = structure_loss_weight
         self.pairwise_fn_name = pairwise_fn
         self.pairwise_fn = pairwise_cosine_similarity if pairwise_fn == 'cos' else pairwise_dist
+        self.verbose = verbose
+        self.early_stop = early_stop
         self.maximum_element = 0
         self.maximum_norm = 0
     
@@ -193,7 +197,7 @@ class LearningWithAdaptiveLabels(nn.Module):
 
     def cross_entropy_nn_pred(self, enc_x, in_y, learnt_y):
         """Cross Entropy NN Prediction based on learnt_y."""
-        enc_x_to_learnt_y_dist = self.pairwise_fn(normalize_tensor_vectors_vmap(enc_x), learnt_y)
+        enc_x_to_learnt_y_dist = self.pairwise_fn(enc_x, learnt_y)
         # factor = 1.0 if self.pairwise_fn == 'cos' else -1.0
         logits = F.log_softmax(-1.0 * enc_x_to_learnt_y_dist, dim=1)
         preds = torch.argmax(logits, dim=1)
@@ -214,17 +218,18 @@ class LearningWithAdaptiveLabels(nn.Module):
             centroids = centroids.detach()
             # print('updating centroids')
             self.learnt_y = update_learnt_centroids(self.learnt_y, centroids, self.decay_factor, self.pairwise_fn == 'cos')
-            # structure_loss = cos_repel_loss_z_optimized(x, target)
+            structure_loss = cos_repel_loss_z_optimized(x, target)
         self.current_step += 1
 
-        if self.current_step == 4876:
-            print('learnt_y (near the end of training)')
-            print(self.learnt_y)
+        if self.early_stop and self.current_step == (self.early_stop*195):
+            if self.verbose: 
+                print('learnt_y (near the end of training)')
+                print(self.learnt_y)
             raise ValueError()
         
         self.maximum_element = max(self.maximum_element, get_max_element(z))
         self.maximum_norm = max(self.maximum_norm, get_max_element(calculate_vector_norms(z)))
-        if (self.current_step % 195) == 194:
+        if (self.current_step % 195) == 194 and self.verbose:
             print('z', self.maximum_element, self.maximum_norm, z)
             print('learnt_y', 
                   get_max_element(self.learnt_y), 
