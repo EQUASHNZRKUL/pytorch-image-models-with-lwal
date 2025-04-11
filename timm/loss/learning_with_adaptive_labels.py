@@ -278,8 +278,9 @@ class LearningWithAdaptiveLabels(nn.Module):
         z = x.clone()
         self.device = x.device
 
-        input_loss = self.cross_entropy_pull_loss(x, target, self.learnt_y)
-        structure_loss = cos_repel_loss_z_optimized(x, target)
+        one_hot_target = torch.nn.functional.one_hot(target, num_classes=self.num_classes)
+        input_loss = self.cross_entropy_pull_loss(x, one_hot_target, self.learnt_y)
+        structure_loss = cos_repel_loss_z_optimized(x, one_hot_target)
         em_loss = self.structure_loss_weight * structure_loss + 1.0 * input_loss
 
         return em_loss
