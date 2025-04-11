@@ -231,10 +231,10 @@ class LearningWithAdaptiveLabels(nn.Module):
         self.maximum_norm = max(self.maximum_norm, get_max_element(calculate_vector_norms(z)))
         if (self.current_step % 195) == 194 and self.verbose:
             print('z', self.maximum_element, self.maximum_norm, z)
-            print('learnt_y', 
-                  get_max_element(self.learnt_y), 
-                  get_max_element(calculate_vector_norms(self.learnt_y)), 
-                  self.learnt_y)
+            # print('learnt_y', 
+            #       get_max_element(self.learnt_y), 
+            #       get_max_element(calculate_vector_norms(self.learnt_y)), 
+            #       self.learnt_y)
             if self.pairwise_fn == pairwise_cosine_similarity:
                 cossim = pairwise_cosine_similarity(normalize_tensor_vectors_vmap(z), self.learnt_y)
                 print('cosine sim', 
