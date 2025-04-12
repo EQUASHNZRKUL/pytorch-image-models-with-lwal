@@ -33,6 +33,7 @@ def pairwise_cosine_similarity(A, B):
 
     # Calculate cosine similarity
     print('pairwise shapes', A_normalized.shape, B_normalized.T.shape)
+    print('pairwise devices', A.device, B.device)
     similarity = torch.matmul(A_normalized, B_normalized.T)
     return 1-similarity
 
@@ -279,7 +280,8 @@ class LearningWithAdaptiveLabels(nn.Module):
         z = x.clone()
         self.device = x.device
 
-        one_hot_target = torch.nn.functional.one_hot(target, num_classes=self.num_classes, device=self.device)
+        one_hot_target = torch.nn.functional.one_hot(target, num_classes=self.num_classes)
+        # one_hot_target.to
         input_loss = self.cross_entropy_pull_loss(z, one_hot_target, self.learnt_y)
         structure_loss = cos_repel_loss_z_optimized(z, one_hot_target)
         em_loss = self.structure_loss_weight * structure_loss + 1.0 * input_loss
