@@ -32,6 +32,7 @@ def pairwise_cosine_similarity(A, B):
     B_normalized = B / B_norm
 
     # Calculate cosine similarity
+    print('pairwise shapes', A_normalized.shape, B_normalized.T.shape)
     similarity = torch.matmul(A_normalized, B_normalized.T)
     return 1-similarity
 
