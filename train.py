@@ -101,10 +101,6 @@ parser.add_argument('--train-num-samples', default=None, type=int,
                     metavar='N', help='Manually specify num samples in train split, for IterableDatasets.')
 parser.add_argument('--val-num-samples', default=None, type=int,
                     metavar='N', help='Manually specify num samples in validation split, for IterableDatasets.')
-parser.add_argument('--train-data-subset', default=None, type=float,
-                    metavar='N', help='Manually specify num samples in train split, for IterableDatasets.')
-parser.add_argument('--train-data-subset', default=None, type=float,
-                    metavar='N', help='Manually specify num samples in train split, for IterableDatasets.')
 group.add_argument('--dataset-download', action='store_true', default=False,
                    help='Allow download of dataset for torch/ and tfds/ datasets that support it.')
 group.add_argument('--class-map', default='', type=str, metavar='FILENAME',
