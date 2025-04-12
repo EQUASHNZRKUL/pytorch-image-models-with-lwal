@@ -32,8 +32,8 @@ def pairwise_cosine_similarity(A, B):
     B_normalized = B / B_norm
 
     # Calculate cosine similarity
-    print('pairwise shapes', A_normalized.shape, B_normalized.T.shape)
-    print('pairwise devices', A.device, B.device)
+    # print('pairwise shapes', A_normalized.shape, B_normalized.T.shape)
+    # print('pairwise devices', A.device, B.device)
     similarity = torch.matmul(A_normalized, B_normalized.T)
     return 1-similarity
 
@@ -187,20 +187,16 @@ class LearningWithAdaptiveLabels(nn.Module):
         return self.learnt_y
 
     def cross_entropy_pull_loss(self, enc_x, in_y, learnt_y):
-        # Compute pairwise distances between enc_x and learnt_y
-        # enc_x_dist = pairwise_dist(normalize_tensor_vectors_vmap(enc_x), learnt_y)
-        # enc_x_dist = self.pairwise_fn(normalize_tensor_vectors_vmap(enc_x), learnt_y)
         enc_x_dist = self.pairwise_fn(enc_x, learnt_y)
-        # factor = 1.0 if self.pairwise_fn == 'cos' else -1.0
-        # -1 ( 1 - cossim ) = cossim - 1
         logits = F.log_softmax(-1.0 * enc_x_dist, dim=1)
         loss = torch.sum(-in_y * logits, dim=-1)
         return loss.mean()
 
     def cross_entropy_nn_pred(self, enc_x, in_y, learnt_y):
         """Cross Entropy NN Prediction based on learnt_y."""
+        print('pairwise shapes', enc_x.shape, learnt_y.T.shape)
+        print('pairwise devices', enc_x.device, learnt_y.device)
         enc_x_to_learnt_y_dist = self.pairwise_fn(enc_x, learnt_y)
-        # factor = 1.0 if self.pairwise_fn == 'cos' else -1.0
         logits = F.log_softmax(-1.0 * enc_x_to_learnt_y_dist, dim=1)
         preds = torch.argmax(logits, dim=1)
 
@@ -290,10 +286,11 @@ class LearningWithAdaptiveLabels(nn.Module):
     
     def accuracy(self, output, target, learnt_y, topk=(1,)):
         """Computes the 1-accuracy for lwal loss."""
-        x = output.to(torch.float32)
+        z = output.clone()
+        z = z.to(torch.float32)
         # x = self.fc(output)
         one_hot_target = torch.nn.functional.one_hot(target, num_classes=10)
-        pred_y, true_y = self.cross_entropy_nn_pred(x, one_hot_target, learnt_y)
+        pred_y, true_y = self.cross_entropy_nn_pred(z, one_hot_target, learnt_y)
 
         acc1 = (pred_y == true_y).float().mean() * 100.
         return acc1, 0.0
