@@ -194,8 +194,8 @@ class LearningWithAdaptiveLabels(nn.Module):
 
     def cross_entropy_nn_pred(self, enc_x, in_y, learnt_y):
         """Cross Entropy NN Prediction based on learnt_y."""
-        print('pairwise shapes', enc_x.shape, learnt_y.T.shape)
-        print('pairwise devices', enc_x.device, learnt_y.device)
+        # print('pairwise shapes', enc_x.shape, learnt_y.T.shape)
+        # print('pairwise devices', enc_x.device, learnt_y.device)
         # print("Tensor enc_x has NaNs:", torch.isnan(enc_x).any())
         # print("Tensor enc_x has Infs:", torch.isinf(enc_x).any())
         # print("Tensor learnt_y has NaNs:", torch.isnan(learnt_y).any())
