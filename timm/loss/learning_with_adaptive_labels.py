@@ -194,17 +194,10 @@ class LearningWithAdaptiveLabels(nn.Module):
 
     def cross_entropy_nn_pred(self, enc_x, in_y, learnt_y):
         """Cross Entropy NN Prediction based on learnt_y."""
-        # print('pairwise shapes', enc_x.shape, learnt_y.T.shape)
-        # print('pairwise devices', enc_x.device, learnt_y.device)
-        # print("Tensor enc_x has NaNs:", torch.isnan(enc_x).any())
-        # print("Tensor enc_x has Infs:", torch.isinf(enc_x).any())
-        # print("Tensor learnt_y has NaNs:", torch.isnan(learnt_y).any())
-        # print("Tensor learnt_y has Infs:", torch.isinf(learnt_y).any())
-        enc_x_to_learnt_y_dist = self.pairwise_fn(enc_x, learnt_y)
-        logits = F.log_softmax(-1.0 * enc_x_to_learnt_y_dist, dim=1)
-        preds = torch.argmax(logits, dim=1)
-
-        true_y = torch.argmax(in_y, dim=1)
+        enc_x_dist = self.pairwise_fn(enc_x, learnt_y)
+        logits = F.log_softmax(-1.0 * enc_x_dist, dim=1)
+        preds = torch.argmin(logits, dim=1)
+        true_y = torch.argmin(in_y, dim=1)
         return preds, true_y
 
     def forward(self, x: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
