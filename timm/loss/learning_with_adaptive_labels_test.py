@@ -139,6 +139,27 @@ class TimmLwal():
         em_loss = input_loss
 
         return em_loss
+    
+    def cross_entropy_nn_pred(self, enc_x, in_y, learnt_y):
+        """Cross Entropy NN Prediction based on learnt_y."""
+        enc_x_dist = self.pairwise_dist(enc_x, learnt_y)
+        logits = F.log_softmax(-1.0 * enc_x_dist, dim=1)
+        preds = torch.argmax(logits, dim=1)
+        print('torch preds', logits)
+        true_y = torch.argmax(in_y, dim=1)
+        print('torch true', in_y)
+        return preds, true_y
+
+    def accuracy(self, output, target, learnt_y, topk=(1,)):
+        """Computes the 1-accuracy for lwal loss."""
+        z = output.clone()
+        z = z.to(torch.float32)
+        # x = self.fc(output)
+        # one_hot_target = torch.nn.functional.one_hot(target, num_classes=10)
+        pred_y, true_y = self.cross_entropy_nn_pred(z, target, learnt_y)
+
+        acc1 = (pred_y == true_y).float().mean() * 100.
+        return acc1, 0.0
 
 class XiaoLwal():
     def __init__(self, current_step=0, warmup_steps=0, stationary_steps=0, rloss=None, learnt_y=None, num_classes=10):
@@ -236,6 +257,26 @@ class XiaoLwal():
         # em_loss = 10.0 * structure_loss + 1.0 * input_loss
         em_loss = input_loss
         return em_loss
+    
+    def call(self, x, training = False):
+        z = self.encoder(x, training=training)
+        z = self.classification_head(z)
+        # print(tf.reduce_max(z))
+        return z, None
+
+    def test_step(self, data, learnt_y):
+        z, in_y = data
+        print(z, in_y, learnt_y)
+
+        input_loss = self.ce_pull_loss(z, in_y, learnt_y)
+        structure_loss = self.cos_repel_loss_z(z, in_y, self.num_classes)
+        em_loss = 10.0 * structure_loss + 1.0 * input_loss
+
+        predictions, true_y = self.ce_nn_pred(z, in_y, learnt_y)
+        metric = tf.keras.metrics.Accuracy()
+        metric.update_state(true_y, predictions)
+        return metric.result()
+
 
 def are_tensors_equivalent(tf_tensor, torch_tensor, rtol=1e-5, atol=1e-8):
     tf_array = tf_tensor.numpy() if isinstance(tf_tensor, tf.Tensor) else tf_tensor
@@ -278,6 +319,21 @@ cosine_out = TimmLwal().pairwise_cosine_similarity(torch_z, torch_learnt_y)
 print(torch_out)
 print(cosine_out)
 
+print("Testing cc_nn_pred")
+tf_out = XiaoLwal().ce_nn_pred(tf_z, tf_in_y, tf_learnt_y)
+torch_out = TimmLwal().cross_entropy_nn_pred(torch_z, torch_in_y, torch_learnt_y)
+print(tf_out[0])
+print(torch_out[0])
+print(tf_out[1])
+print(torch_out[1])
+assert(are_tensors_equivalent(tf_out[0], torch_out[0]))
+assert(are_tensors_equivalent(tf_out[1], torch_out[1])) 
+
+print("Testing accuracy")
+tf_out = XiaoLwal().test_step((tf_z, tf_in_y), tf_learnt_y)
+torch_out = TimmLwal().accuracy(torch_z, torch_in_y, torch_learnt_y)
+print(tf_out, torch_out)
+
 print("Testing compute_centroids")
 tf_out = XiaoLwal().compute_centroids(tf_z, tf_in_y)
 torch_out = TimmLwal().compute_centroids(torch_z, torch_in_y)
@@ -313,6 +369,8 @@ assert(are_tensors_equivalent(tf_out, torch_out))
 # torch_out = TimmLwal(current_step=0, stationary_steps=2, learnt_y=torch_learnt_y).forward(torch_z, torch_in_y)
 # # print(tf_out, torch_out)
 # assert(are_tensors_equivalent(tf_out, torch_out))
+
+
 
 print("Testing exploding centroids")
 BATCH_SIZE=500

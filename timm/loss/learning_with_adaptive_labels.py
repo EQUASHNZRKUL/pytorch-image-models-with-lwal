@@ -196,8 +196,8 @@ class LearningWithAdaptiveLabels(nn.Module):
         """Cross Entropy NN Prediction based on learnt_y."""
         enc_x_dist = self.pairwise_fn(enc_x, learnt_y)
         logits = F.log_softmax(-1.0 * enc_x_dist, dim=1)
-        preds = torch.argmin(logits, dim=1)
-        true_y = torch.argmin(in_y, dim=1)
+        preds = torch.argmax(logits, dim=1)
+        true_y = torch.argmax(in_y, dim=1)
         return preds, true_y
 
     def forward(self, x: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
@@ -254,21 +254,6 @@ class LearningWithAdaptiveLabels(nn.Module):
 
         return em_loss, self.learnt_y
     
-    # def test(self, x: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
-    #     batch_size = x.shape[0]
-    #     assert batch_size == target.shape[0]
-
-    #     # print('max element', self.maximum_element)
-    #     # print('max norm', self.maximum_norm)
-    #     one_hot_target = torch.nn.functional.one_hot(target, num_classes=self.num_classes)
-
-    #     input_loss = self.cross_entropy_pull_loss(x, one_hot_target, self.learnt_y)
-    #     structure_loss = cos_repel_loss_z_optimized(x, one_hot_target)
-    #     em_loss = self.structure_loss_weight * structure_loss + 1.0 * input_loss
-    #     # em_loss = input_loss
-
-    #     return em_loss
-    
     def test(self, x: torch.Tensor, target: torch.Tensor) -> torch.Tensor: 
         z = x.clone()
         self.device = x.device
@@ -286,7 +271,7 @@ class LearningWithAdaptiveLabels(nn.Module):
         z = output.clone()
         z = z.to(torch.float32)
         # x = self.fc(output)
-        one_hot_target = torch.nn.functional.one_hot(target, num_classes=10)
+        one_hot_target = torch.nn.functional.one_hot(target, num_classes=self.num_classes)
         pred_y, true_y = self.cross_entropy_nn_pred(z, one_hot_target, learnt_y)
 
         acc1 = (pred_y == true_y).float().mean() * 100.
