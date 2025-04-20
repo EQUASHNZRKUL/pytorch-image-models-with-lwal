@@ -220,7 +220,7 @@ class LearningWithAdaptiveLabels(nn.Module):
             if self.verbose: 
                 print('learnt_y (near the end of training)')
                 print(self.learnt_y)
-            raise ValueError()
+            raise KeyboardInterrupt()
         
         self.maximum_element = max(self.maximum_element, get_max_element(z))
         self.maximum_norm = max(self.maximum_norm, get_max_element(calculate_vector_norms(z)))
