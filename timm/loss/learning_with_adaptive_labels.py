@@ -273,6 +273,7 @@ class LearningWithAdaptiveLabels(nn.Module):
         # x = self.fc(output)
         one_hot_target = torch.nn.functional.one_hot(target, num_classes=self.num_classes)
         pred_y, true_y = self.cross_entropy_nn_pred(z, one_hot_target, learnt_y)
+        structure_loss = cos_repel_loss_z_optimized(z, one_hot_target)
 
         acc1 = (pred_y == true_y).float().mean() * 100.
-        return acc1, 0.0
+        return acc1, structure_loss
