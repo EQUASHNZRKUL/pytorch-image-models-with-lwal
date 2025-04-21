@@ -122,7 +122,8 @@ def cos_repel_loss_z(z, in_y, num_labels):
         same_class_mask *= class_i_mask
 
     # Compute the loss: mean of cosine distances for different-class pairs
-    return torch.mean(cos_dist * same_class_mask)
+    abs_cos_dist = torch.abs(cos_dist)
+    return torch.mean(abs_cos_dist * same_class_mask)
 
 
 def cos_repel_loss_z_optimized(z, in_y):
@@ -140,7 +141,8 @@ def cos_repel_loss_z_optimized(z, in_y):
     class_mask = (true_y_expanded != true_y_expanded.T).float()  # Shape: [batch_size, batch_size]
 
     # Compute the loss: mean of cosine distances for different-class pairs
-    return torch.mean(cos_dist * class_mask)
+    abs_cos_dist = torch.abs(cos_dist)
+    return torch.mean(abs_cos_dist * class_mask)
 
 
 class LearningWithAdaptiveLabels(nn.Module):
@@ -220,6 +222,8 @@ class LearningWithAdaptiveLabels(nn.Module):
             if self.verbose: 
                 print('learnt_y (near the end of training)')
                 print(self.learnt_y)
+            print('pairwise cosine sim of learnt_y x learnt_y')
+            pairwise_cosine_similarity(self.learnt_y, self.learnt_y)
             raise KeyboardInterrupt()
         
         self.maximum_element = max(self.maximum_element, get_max_element(z))
