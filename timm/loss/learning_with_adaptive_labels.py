@@ -223,7 +223,7 @@ class LearningWithAdaptiveLabels(nn.Module):
                 print('learnt_y (near the end of training)')
                 print(self.learnt_y)
             print('pairwise cosine sim of learnt_y x learnt_y')
-            pairwise_cosine_similarity(self.learnt_y, self.learnt_y)
+            print(pairwise_cosine_similarity(self.learnt_y, self.learnt_y))
             raise KeyboardInterrupt()
         
         self.maximum_element = max(self.maximum_element, get_max_element(z))
