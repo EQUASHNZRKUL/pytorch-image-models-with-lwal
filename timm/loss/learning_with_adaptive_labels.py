@@ -122,7 +122,7 @@ def cos_repel_loss_z(z, in_y, num_labels):
         same_class_mask *= class_i_mask
 
     # Compute the loss: mean of cosine distances for different-class pairs
-    abs_cos_dist = torch.abs(cos_dist)
+    abs_cos_dist = torch.relu(cos_dist)
     return torch.mean(abs_cos_dist * same_class_mask)
 
 
