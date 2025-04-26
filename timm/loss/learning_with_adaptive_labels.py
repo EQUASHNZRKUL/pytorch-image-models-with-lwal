@@ -141,7 +141,7 @@ def cos_repel_loss_z_optimized(z, in_y):
     class_mask = (true_y_expanded != true_y_expanded.T).float()  # Shape: [batch_size, batch_size]
 
     # Compute the loss: mean of cosine distances for different-class pairs
-    abs_cos_dist = torch.abs(cos_dist)
+    abs_cos_dist = torch.relu(-cos_dist)
     return torch.mean(abs_cos_dist * class_mask)
 
 
