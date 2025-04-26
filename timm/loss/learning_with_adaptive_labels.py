@@ -133,7 +133,7 @@ def cos_repel_loss_z_optimized(z, in_y):
     # Compute cosine similarity matrix
     # cos_dist = torch.matmul(norm_z, norm_z.T)
     # abs_cos_dist = torch.relu(-cos_dist)
-    pairwise_dist = pairwise_dist(norm_z, norm_z)
+    p_dist = pairwise_dist(norm_z, norm_z)
 
     # Get the class labels (assumes one-hot encoded input)
     true_y = torch.argmax(in_y, dim=1)  # Shape: [batch_size]
@@ -143,7 +143,7 @@ def cos_repel_loss_z_optimized(z, in_y):
     class_mask = (true_y_expanded != true_y_expanded.T).float()  # Shape: [batch_size, batch_size]
 
     # Compute the loss: mean of cosine distances for different-class pairs
-    return torch.mean(pairwise_dist * class_mask)
+    return torch.mean(p_dist * class_mask)
 
 
 class LearningWithAdaptiveLabels(nn.Module):
