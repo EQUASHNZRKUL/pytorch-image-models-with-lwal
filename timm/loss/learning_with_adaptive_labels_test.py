@@ -99,6 +99,7 @@ class TimmLwal():
     def cos_repel_loss_z(self, z, in_y, num_labels):
         norm_z = z / torch.norm(z, dim=1, keepdim=True)
         cos_dist = torch.matmul(norm_z, norm_z.T)
+        abs_cos_dist = torch.relu(-cos_dist)
         true_y = torch.argmax(in_y, dim=1).unsqueeze(1)
         same_class_mask = torch.ones((in_y.shape[0], in_y.shape[0]), device=z.device, dtype=torch.float32)
         for i in range(num_labels):
@@ -106,15 +107,16 @@ class TimmLwal():
             true_y_i = (true_y == i).float()
             class_i_mask = 1 - torch.matmul(true_y_i, true_y_i.T)  # 0 if same class, 1 otherwise
             same_class_mask *= class_i_mask
-        return torch.mean(cos_dist * same_class_mask)
+        return torch.mean(abs_cos_dist * same_class_mask)
 
     def cos_repel_loss_z_optimized(self, z, in_y):
         norm_z = z / torch.norm(z, dim=1, keepdim=True)
         cos_dist = torch.matmul(norm_z, norm_z.T)
+        abs_cos_dist = torch.relu(cos_dist)
         true_y = torch.argmax(in_y, dim=1)  # Shape: [batch_size]
         true_y_expanded = true_y.unsqueeze(0)  # Shape: [1, batch_size]
         class_mask = (true_y_expanded != true_y_expanded.T).float()  # Shape: [batch_size, batch_size]
-        return torch.mean(cos_dist * class_mask)
+        return torch.mean(abs_cos_dist * class_mask)
 
     def forward(self, x: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
         batch_size = x.shape[0]
@@ -211,17 +213,25 @@ class XiaoLwal():
     def cos_repel_loss_z(self, z, in_y, num_labels):
         norm_z = z/tf.norm(z, axis=1, keepdims=True)
         cos_dist = norm_z @ tf.transpose(norm_z)
+        print('cos_dist', cos_dist)
+        abs_cos_dist = tf.nn.relu(cos_dist)
+        print('abs_cos_dist', abs_cos_dist)
 
         # we only penalize vectors that are in differnt classes
         true_y = tf.argmax(in_y, axis=1)
         true_y_ = tf.expand_dims(true_y, axis=1)
+        print('in_y', in_y)
+        print('true_y', true_y)
+        print('true_y_', true_y_)
         same_class_mask = tf.ones((in_y.shape[0], in_y.shape[0]), dtype=tf.float32)
+        print('same_class_mask before', same_class_mask)
         for i in range(num_labels):
             true_y_i = tf.cast(true_y_ == i, dtype=tf.float32)
             class_i_mask = 1 - (true_y_i @ tf.transpose(true_y_i)) # 0 if same class, 1 otherwise
             same_class_mask *= class_i_mask
         
-        return tf.reduce_mean(cos_dist * same_class_mask)
+        print('same_class_mask after', same_class_mask)
+        return tf.reduce_mean(abs_cos_dist * same_class_mask)
 
 
     def ce_pull_loss(self, enc_x, in_y, learnt_y):
@@ -361,7 +371,7 @@ assert(are_tensors_equivalent(tf_out, torch_out))
 print("Testing repel loss")
 tf_out = XiaoLwal().cos_repel_loss_z(tf_z, tf_in_y, 10)
 torch_out = TimmLwal().cos_repel_loss_z_optimized(torch_z, torch_in_y)
-# print(tf_out, torch_out)
+print(tf_out, torch_out)
 assert(are_tensors_equivalent(tf_out, torch_out))
 
 # print("Testing forward()")
@@ -372,32 +382,32 @@ assert(are_tensors_equivalent(tf_out, torch_out))
 
 
 
-print("Testing exploding centroids")
-BATCH_SIZE=500
-LATENT_DIM=100
-NUM_CLASSES=10
-_, learnt_y = create_dummy_tensors((NUM_CLASSES, LATENT_DIM))
-_, centroids = create_dummy_tensors((NUM_CLASSES, LATENT_DIM))
-for i in range(1000):
-    _, z = create_dummy_tensors((BATCH_SIZE, LATENT_DIM))
-    _, in_y = create_dummy_tensors((BATCH_SIZE, NUM_CLASSES))
-    centroids = TimmLwal().compute_centroids(z, in_y, NUM_CLASSES)
-    learnt_y = TimmLwal().update_learnt_centroids(learnt_y, centroids)
-    if i % 100 == 0:
-        print(i, 
-              get_max_element(learnt_y).item(), 
-              get_max_element(calculate_vector_norms(learnt_y)).item())
-print(z.shape, learnt_y.shape)
-print(TimmLwal().pairwise_cosine_similarity(z, learnt_y))
+# print("Testing exploding centroids")
+# BATCH_SIZE=500
+# LATENT_DIM=100
+# NUM_CLASSES=10
+# _, learnt_y = create_dummy_tensors((NUM_CLASSES, LATENT_DIM))
+# _, centroids = create_dummy_tensors((NUM_CLASSES, LATENT_DIM))
+# for i in range(1000):
+#     _, z = create_dummy_tensors((BATCH_SIZE, LATENT_DIM))
+#     _, in_y = create_dummy_tensors((BATCH_SIZE, NUM_CLASSES))
+#     centroids = TimmLwal().compute_centroids(z, in_y, NUM_CLASSES)
+#     learnt_y = TimmLwal().update_learnt_centroids(learnt_y, centroids)
+#     if i % 100 == 0:
+#         print(i, 
+#               get_max_element(learnt_y).item(), 
+#               get_max_element(calculate_vector_norms(learnt_y)).item())
+# print(z.shape, learnt_y.shape)
+# print(TimmLwal().pairwise_cosine_similarity(z, learnt_y))
 
 
-print('Testing cossim')
-z = torch.tensor(np.array([[6.7383e-02,  8.3008e-02,  1.3428e-02, 9.0332e-03, -1.5430e-01,  1.9727e-01],
-              [-5.1514e-02,  8.3008e-02, -1.0449e-01, -1.9336e-01, -2.4414e-03,  7.4463e-03],
-              [-3.8477e-01,  2.2217e-02,  8.0078e-02,  -1.8848e-01, 3.6621e-04,  1.8945e-01]]))
-learnt_y = torch.tensor(np.array([[2.7586e-01, -7.0674e-02, -1.9153e-01, -8.1438e-02, -1.5261e-01, -3.5059e-02],
-                     [2.8019e-01,  2.1880e-01,  5.5808e-02, -4.3636e-02,  1.5164e-01, 1.4643e-01],
-                     [2.2926e-01, -4.7721e-02,  2.9392e-01,  6.4710e-02,  3.2113e-01, -4.6744e-02],
-                     [8.6757e-02,  2.1305e-01, -5.0460e-01, -6.7577e-02,  3.5086e-01, 1.2281e-01,]]))
-print(z.shape, learnt_y.shape)
-print(-TimmLwal().pairwise_cosine_similarity(z, learnt_y))
+# print('Testing cossim')
+# z = torch.tensor(np.array([[6.7383e-02,  8.3008e-02,  1.3428e-02, 9.0332e-03, -1.5430e-01,  1.9727e-01],
+#               [-5.1514e-02,  8.3008e-02, -1.0449e-01, -1.9336e-01, -2.4414e-03,  7.4463e-03],
+#               [-3.8477e-01,  2.2217e-02,  8.0078e-02,  -1.8848e-01, 3.6621e-04,  1.8945e-01]]))
+# learnt_y = torch.tensor(np.array([[2.7586e-01, -7.0674e-02, -1.9153e-01, -8.1438e-02, -1.5261e-01, -3.5059e-02],
+#                      [2.8019e-01,  2.1880e-01,  5.5808e-02, -4.3636e-02,  1.5164e-01, 1.4643e-01],
+#                      [2.2926e-01, -4.7721e-02,  2.9392e-01,  6.4710e-02,  3.2113e-01, -4.6744e-02],
+#                      [8.6757e-02,  2.1305e-01, -5.0460e-01, -6.7577e-02,  3.5086e-01, 1.2281e-01,]]))
+# print(z.shape, learnt_y.shape)
+# print(-TimmLwal().pairwise_cosine_similarity(z, learnt_y))
