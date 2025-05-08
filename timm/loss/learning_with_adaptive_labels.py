@@ -272,7 +272,7 @@ class LearningWithAdaptiveLabels(nn.Module):
         correct_per_class = defaultdict(int)
         total_per_class = defaultdict(int)
 
-        for true, pred in zip(y_true, y_pred):
+        for true, pred in zip(true_y, pred_y):
             total_per_class[true] += 1
             if true == pred:
                 correct_per_class[true] += 1
