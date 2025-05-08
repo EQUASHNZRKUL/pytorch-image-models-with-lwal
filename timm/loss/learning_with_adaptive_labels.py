@@ -280,7 +280,7 @@ class LearningWithAdaptiveLabels(nn.Module):
         for label in total_per_class:
             accuracy_per_class.add((label, correct_per_class[label] / total_per_class[label]))
 
-        print accuracy_per_class
+        print(accuracy_per_class)
 
     def accuracy(self, output, target, learnt_y, topk=(1,)):
         """Computes the 1-accuracy for lwal loss."""
