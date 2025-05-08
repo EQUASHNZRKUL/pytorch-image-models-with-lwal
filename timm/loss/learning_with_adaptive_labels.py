@@ -267,6 +267,21 @@ class LearningWithAdaptiveLabels(nn.Module):
 
         return em_loss
     
+    def label_wise_accuracy(self, pred_y, true_y): 
+        correct_per_class = defaultdict(int)
+        total_per_class = defaultdict(int)
+
+        for true, pred in zip(y_true, y_pred):
+            total_per_class[true] += 1
+            if true == pred:
+                correct_per_class[true] += 1
+
+        accuracy_per_class = {}
+        for label in total_per_class:
+            accuracy_per_class.add((label, correct_per_class[label] / total_per_class[label]))
+
+        print accuracy_per_class
+
     def accuracy(self, output, target, learnt_y, topk=(1,)):
         """Computes the 1-accuracy for lwal loss."""
         z = output.clone()
@@ -277,4 +292,5 @@ class LearningWithAdaptiveLabels(nn.Module):
         structure_loss = cos_repel_loss_z_optimized(z, one_hot_target)
 
         acc1 = (pred_y == true_y).float().mean() * 100.
+        self.label_wise_accuracy(pred_y, true_y)
         return acc1, structure_loss
