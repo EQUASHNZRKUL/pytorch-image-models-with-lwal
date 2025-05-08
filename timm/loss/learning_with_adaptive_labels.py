@@ -8,6 +8,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from collections import defaultdict
 
 def pairwise_dist(A, B):
     na = torch.sum(A**2, dim=1)
