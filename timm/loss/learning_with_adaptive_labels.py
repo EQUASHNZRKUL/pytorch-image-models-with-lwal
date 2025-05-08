@@ -216,6 +216,7 @@ class LearningWithAdaptiveLabels(nn.Module):
             centroids = centroids.detach()
             # print('updating centroids')
             self.learnt_y = update_learnt_centroids(self.learnt_y, centroids, self.decay_factor, self.pairwise_fn == 'cos')
+            structure_loss = cos_repel_loss_z_optimized(x, target)
         self.current_step += 1
 
         if self.early_stop and self.current_step == (self.early_stop*195):
@@ -252,7 +253,7 @@ class LearningWithAdaptiveLabels(nn.Module):
                       get_max_element(calculate_vector_norms(normed_dists)),
                       normed_dists)
 
-        structure_loss = cos_repel_loss_z_optimized(x, target)
+        # structure_loss = cos_repel_loss_z_optimized(x, target)
         input_loss = self.cross_entropy_pull_loss(x, target, self.learnt_y)
         em_loss = self.structure_loss_weight * structure_loss + 1.0 * input_loss
 
