@@ -279,8 +279,7 @@ class LearningWithAdaptiveLabels(nn.Module):
 
         accuracy_per_class = {}
         for label in total_per_class:
-            accuracy_per_class.add((label, correct_per_class[label] / total_per_class[label]))
-
+            accuracy_per_class[label] = correct_per_class[label] / total_per_class[label]
         print(accuracy_per_class)
 
     def accuracy(self, output, target, learnt_y, topk=(1,)):
