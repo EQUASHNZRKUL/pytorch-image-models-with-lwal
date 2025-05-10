@@ -149,8 +149,8 @@ def cos_repel_loss_z_optimized(z, in_y):
 
 
 def contrastive_loss(centroids):
-    logits = F.log_softmax(-1.0 * centroids, dim=1)
-    loss = torch.sum(-centroids * logits, dim=-1)
+    criterion = nn.CrossEntropyLoss()
+    loss = criterion(centroids, centroids)
     return loss.mean()
 
 
