@@ -148,6 +148,12 @@ def cos_repel_loss_z_optimized(z, in_y):
     return torch.mean(cos_dist * class_mask)
 
 
+def contrastive_loss(centroids):
+    logits = F.log_softmax(-1.0 * centroids, dim=1)
+    loss = torch.sum(-centroids * logits, dim=-1)
+    return loss.mean()
+
+
 class LearningWithAdaptiveLabels(nn.Module):
     """ BCE with optional one-hot from dense targets, label smoothing, thresholding
     NOTE for experiments comparing CE to BCE /w label smoothing, may remove
@@ -214,10 +220,11 @@ class LearningWithAdaptiveLabels(nn.Module):
         num_labels = self.num_classes
         structure_loss = 0
         if self.current_step % self.stationary_steps == 0:
-            centroids = compute_centroids(z, target, self.num_classes)
+            centroids = compute_centroids(x, target, self.num_classes)
+            structure_loss = contrastive_loss(centroids)
             centroids = centroids.detach()
             self.learnt_y = update_learnt_centroids(self.learnt_y, centroids, self.decay_factor, self.pairwise_fn == 'cos')
-            structure_loss = cos_repel_loss_z_optimized(x, target)
+            # structure_loss = cos_repel_loss_z_optimized(x, target)
         self.current_step += 1
 
         if self.early_stop and self.current_step == (self.early_stop*195):
@@ -263,7 +270,8 @@ class LearningWithAdaptiveLabels(nn.Module):
         one_hot_target = torch.nn.functional.one_hot(target, num_classes=self.num_classes)
         # one_hot_target.to
         input_loss = self.cross_entropy_pull_loss(z, one_hot_target, self.learnt_y)
-        structure_loss = cos_repel_loss_z_optimized(z, one_hot_target)
+        # structure_loss = cos_repel_loss_z_optimized(z, one_hot_target)
+        structure_loss = 0
         em_loss = self.structure_loss_weight * structure_loss + 1.0 * input_loss
 
         return em_loss
@@ -289,8 +297,9 @@ class LearningWithAdaptiveLabels(nn.Module):
         # x = self.fc(output)
         one_hot_target = torch.nn.functional.one_hot(target, num_classes=self.num_classes)
         pred_y, true_y = self.cross_entropy_nn_pred(z, one_hot_target, learnt_y)
-        structure_loss = cos_repel_loss_z_optimized(z, one_hot_target)
+        # structure_loss = cos_repel_loss_z_optimized(z, one_hot_target)
+        structure_loss = 0
 
         acc1 = (pred_y == true_y).float().mean() * 100.
-        self.label_wise_accuracy(pred_y, true_y)
+        # self.label_wise_accuracy(pred_y, true_y)
         return acc1, structure_loss
