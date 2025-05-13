@@ -149,9 +149,26 @@ def cos_repel_loss_z_optimized(z, in_y):
 
 
 def contrastive_loss(centroids):
-    criterion = nn.CrossEntropyLoss()
-    loss = criterion(centroids, centroids)
-    return loss.mean()
+    # criterion = nn.CrossEntropyLoss()
+    # loss = criterion(centroids, centroids)
+    # return loss.mean()
+    detatched_centroids = centroids.detatch()
+    contrastive_score = torch.einsum(
+        "id, jd->ij",
+        centroids, # / self.args.temperature,
+        centroids,
+        # detatched_centroids,
+    )
+
+    bsz = centroids.shape[0]
+    labels = torch.arange(
+        0, bsz, dtype=torch.long, device=contrastive_score.device
+    )
+    contrastive_loss = torch.nn.functional.cross_entropy(
+        contrastive_score, labels
+    )
+    print('contrastive_loss & score', contrastive_loss, contrastive_score)
+    return contrastive_loss
 
 
 class LearningWithAdaptiveLabels(nn.Module):
@@ -221,10 +238,10 @@ class LearningWithAdaptiveLabels(nn.Module):
         structure_loss = 0
         if self.current_step % self.stationary_steps == 0:
             centroids = compute_centroids(x, target, self.num_classes)
-            # structure_loss = contrastive_loss(centroids)
+            structure_loss = contrastive_loss(centroids)
             centroids = centroids.detach()
             self.learnt_y = update_learnt_centroids(self.learnt_y, centroids, self.decay_factor, self.pairwise_fn == 'cos')
-            structure_loss = cos_repel_loss_z_optimized(x, target)
+            # structure_loss = cos_repel_loss_z_optimized(x, target)
         self.current_step += 1
 
         if self.early_stop and self.current_step == (self.early_stop*195):
@@ -270,8 +287,8 @@ class LearningWithAdaptiveLabels(nn.Module):
         one_hot_target = torch.nn.functional.one_hot(target, num_classes=self.num_classes)
         # one_hot_target.to
         input_loss = self.cross_entropy_pull_loss(z, one_hot_target, self.learnt_y)
-        structure_loss = cos_repel_loss_z_optimized(z, one_hot_target)
-        # structure_loss = 0
+        # structure_loss = cos_repel_loss_z_optimized(z, one_hot_target)
+        structure_loss = 0
         em_loss = self.structure_loss_weight * structure_loss + 1.0 * input_loss
 
         return em_loss
