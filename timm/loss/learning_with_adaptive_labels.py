@@ -152,7 +152,7 @@ def contrastive_loss(centroids):
     # criterion = nn.CrossEntropyLoss()
     # loss = criterion(centroids, centroids)
     # return loss.mean()
-    detatched_centroids = centroids.detatch()
+    detached_centroids = centroids.detach()
     contrastive_score = torch.einsum(
         "id, jd->ij",
         centroids, # / self.args.temperature,
