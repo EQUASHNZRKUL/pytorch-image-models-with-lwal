@@ -167,7 +167,7 @@ def contrastive_loss(centroids):
     contrastive_loss = torch.nn.functional.cross_entropy(
         contrastive_score, labels
     )
-    print('contrastive_loss & score', contrastive_loss, contrastive_score)
+    # print('contrastive_loss & score', contrastive_loss, contrastive_score)
     return contrastive_loss
 
 
