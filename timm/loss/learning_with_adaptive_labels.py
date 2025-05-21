@@ -254,25 +254,29 @@ class LearningWithAdaptiveLabels(nn.Module):
         
         self.maximum_element = max(self.maximum_element, get_max_element(z))
         self.maximum_norm = max(self.maximum_norm, get_max_element(calculate_vector_norms(z)))
-        if (self.current_step % 195) == 194 and self.verbose:
-            print('z', self.maximum_element, self.maximum_norm, z)
-            if self.pairwise_fn == pairwise_cosine_similarity:
-                cossim = pairwise_cosine_similarity(normalize_tensor_vectors_vmap(z), self.learnt_y)
-                print('cosine sim', 
-                    get_max_element(-cossim),
-                    get_max_element(calculate_vector_norms(-cossim)),
-                    cossim)
-            else:
-                dists = pairwise_dist(z, self.learnt_y)
-                normed_dists = pairwise_dist(normalize_tensor_vectors_vmap(z), normalize_tensor_vectors_vmap(self.learnt_y))
-                print('dists', 
-                      get_max_element(dists),
-                      get_max_element(calculate_vector_norms(dists)),
-                      dists)
-                print('normed_dists', 
-                      get_max_element(normed_dists),
-                      get_max_element(calculate_vector_norms(normed_dists)),
-                      normed_dists)
+        # Accuracy prints (every 50 steps)
+        if ((self.current_step % 195) % 50) == 0 and self.verbose: 
+            print('test_acc @ %s steps' % self.current_step, acc_helper(z, target, self.learnt_y))
+        # # Print data every epoch.
+        # if (self.current_step % 195) == 194 and self.verbose:
+        #     print('z', self.maximum_element, self.maximum_norm, z)
+        #     if self.pairwise_fn == pairwise_cosine_similarity:
+        #         cossim = pairwise_cosine_similarity(normalize_tensor_vectors_vmap(z), self.learnt_y)
+        #         print('cosine sim', 
+        #             get_max_element(-cossim),
+        #             get_max_element(calculate_vector_norms(-cossim)),
+        #             cossim)
+        #     else:
+        #         dists = pairwise_dist(z, self.learnt_y)
+        #         normed_dists = pairwise_dist(normalize_tensor_vectors_vmap(z), normalize_tensor_vectors_vmap(self.learnt_y))
+        #         print('dists', 
+        #               get_max_element(dists),
+        #               get_max_element(calculate_vector_norms(dists)),
+        #               dists)
+        #         print('normed_dists', 
+        #               get_max_element(normed_dists),
+        #               get_max_element(calculate_vector_norms(normed_dists)),
+        #               normed_dists)
 
         # structure_loss = cos_repel_loss_z_optimized(x, target)
         input_loss = self.cross_entropy_pull_loss(x, target, self.learnt_y)
@@ -292,31 +296,16 @@ class LearningWithAdaptiveLabels(nn.Module):
         em_loss = self.structure_loss_weight * structure_loss + 1.0 * input_loss
 
         return em_loss
-    
-    def label_wise_accuracy(self, pred_y, true_y): 
-        correct_per_class = defaultdict(int)
-        total_per_class = defaultdict(int)
 
-        for true, pred in zip(true_y, pred_y):
-            total_per_class[true] += 1
-            if true == pred:
-                correct_per_class[true] += 1
-
-        accuracy_per_class = {}
-        for label in total_per_class:
-            accuracy_per_class[label] = correct_per_class[label] / total_per_class[label]
-        print(accuracy_per_class)
+    def acc_helper(self, z, target, learnt_y):
+        one_hot_target = torch.nn.functional.one_hot(target, num_classes=self.num_classes)
+        pred_y, true_y = self.cross_entropy_nn_pred(z, one_hot_target, learnt_y)
+        acc1 = (pred_y == true_y).float().mean() * 100.
+        return acc1
 
     def accuracy(self, output, target, learnt_y, topk=(1,)):
         """Computes the 1-accuracy for lwal loss."""
         z = output.clone()
-        z = z.to(torch.float32)
-        # x = self.fc(output)
-        one_hot_target = torch.nn.functional.one_hot(target, num_classes=self.num_classes)
-        pred_y, true_y = self.cross_entropy_nn_pred(z, one_hot_target, learnt_y)
         structure_loss = cos_repel_loss_z_optimized(z, one_hot_target)
-        # structure_loss = 0
-
-        acc1 = (pred_y == true_y).float().mean() * 100.
-        # self.label_wise_accuracy(pred_y, true_y)
+        acc1 = self.acc_helper(z, target, learnt_y)
         return acc1, structure_loss
