@@ -298,14 +298,14 @@ class LearningWithAdaptiveLabels(nn.Module):
         return em_loss
 
     def acc_helper(self, z, target, learnt_y):
-        one_hot_target = torch.nn.functional.one_hot(target, num_classes=self.num_classes)
-        pred_y, true_y = self.cross_entropy_nn_pred(z, one_hot_target, learnt_y)
+        pred_y, true_y = self.cross_entropy_nn_pred(z, target, learnt_y)
         acc1 = (pred_y == true_y).float().mean() * 100.
         return acc1
 
     def accuracy(self, output, target, learnt_y, topk=(1,)):
         """Computes the 1-accuracy for lwal loss."""
         z = output.clone()
+        one_hot_target = torch.nn.functional.one_hot(target, num_classes=self.num_classes)
         structure_loss = cos_repel_loss_z_optimized(z, one_hot_target)
-        acc1 = self.acc_helper(z, target, learnt_y)
+        acc1 = self.acc_helper(z, one_hot_target, learnt_y)
         return acc1, structure_loss
