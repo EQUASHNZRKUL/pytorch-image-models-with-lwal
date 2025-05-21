@@ -256,7 +256,7 @@ class LearningWithAdaptiveLabels(nn.Module):
         self.maximum_norm = max(self.maximum_norm, get_max_element(calculate_vector_norms(z)))
         # Accuracy prints (every 50 steps)
         if ((self.current_step % 195) % 50) == 0 and self.verbose: 
-            print('test_acc @ %s steps' % self.current_step, self.acc_helper(z, target, self.learnt_y))
+            print('train_acc @ %s steps' % self.current_step, self.acc_helper(z, target, self.learnt_y))
         # # Print data every epoch.
         # if (self.current_step % 195) == 194 and self.verbose:
         #     print('z', self.maximum_element, self.maximum_norm, z)
@@ -305,6 +305,7 @@ class LearningWithAdaptiveLabels(nn.Module):
     def accuracy(self, output, target, learnt_y, topk=(1,)):
         """Computes the 1-accuracy for lwal loss."""
         z = output.clone()
+        z = z.to(torch.float32)
         one_hot_target = torch.nn.functional.one_hot(target, num_classes=self.num_classes)
         structure_loss = cos_repel_loss_z_optimized(z, one_hot_target)
         acc1 = self.acc_helper(z, one_hot_target, learnt_y)
