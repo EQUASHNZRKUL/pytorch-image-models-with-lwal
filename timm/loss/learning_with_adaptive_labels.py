@@ -256,7 +256,7 @@ class LearningWithAdaptiveLabels(nn.Module):
         self.maximum_norm = max(self.maximum_norm, get_max_element(calculate_vector_norms(z)))
         # Accuracy prints (every 50 steps)
         if ((self.current_step % 195) % 50) == 0 and self.verbose: 
-            print('test_acc @ %s steps' % self.current_step, acc_helper(z, target, self.learnt_y))
+            print('test_acc @ %s steps' % self.current_step, self.acc_helper(z, target, self.learnt_y))
         # # Print data every epoch.
         # if (self.current_step % 195) == 194 and self.verbose:
         #     print('z', self.maximum_element, self.maximum_norm, z)
