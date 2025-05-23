@@ -803,7 +803,7 @@ def main():
             num_classes=args.num_classes,
             stationary_steps=args.stationary_steps,
             device=device,
-            current_step=1,
+            current_step=0,
             decay_factor=args.decay_factor,
             structure_loss_weight=args.structure_loss_weight,
             pairwise_fn=args.lwal_pairwise_fn,

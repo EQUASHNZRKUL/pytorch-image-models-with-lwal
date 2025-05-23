@@ -7,8 +7,8 @@ def extract_train_acc(log_text):
     matches = re.findall(pattern, log_text)
 
     # Prepare tab-separated output for Google Sheets
-    header = "Step\tTrain Accuracy"
-    rows = [f"{step} {acc}" for step, acc in matches]
+    header = "Step,Train Accuracy"
+    rows = [f"{step},{acc}" for step, acc in matches]
 
     return "\n".join([header] + rows)
 
