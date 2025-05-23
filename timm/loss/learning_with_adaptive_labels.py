@@ -242,7 +242,6 @@ class LearningWithAdaptiveLabels(nn.Module):
             centroids = centroids.detach()
             self.learnt_y = update_learnt_centroids(self.learnt_y, centroids, self.decay_factor, self.pairwise_fn == 'cos')
             # structure_loss = cos_repel_loss_z_optimized(x, target)
-        self.current_step += 1
 
         if self.early_stop and self.current_step == (self.early_stop*195):
             if self.verbose: 
@@ -257,6 +256,7 @@ class LearningWithAdaptiveLabels(nn.Module):
         # Accuracy prints (every 50 steps)
         if ((self.current_step % 195) % 50) == 0 and self.verbose: 
             print('train_acc @ %s steps' % self.current_step, self.acc_helper(z, target, self.learnt_y))
+        self.current_step += 1
         # # Print data every epoch.
         # if (self.current_step % 195) == 194 and self.verbose:
         #     print('z', self.maximum_element, self.maximum_norm, z)
