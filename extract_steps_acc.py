@@ -8,7 +8,7 @@ def extract_train_acc(log_text):
 
     # Prepare tab-separated output for Google Sheets
     header = "Step,Train Accuracy"
-    rows = [f"{step},{acc}" for step, acc in matches]
+    rows = [f"{int(step)-1},{acc}" for step, acc in matches]
 
     return "\n".join([header] + rows)
 

@@ -303,6 +303,7 @@ group.add_argument('--bce-target-thresh', type=float, default=None,
                    help='Threshold for binarizing softened BCE targets (default: None, disabled).')
 group.add_argument('--bce-pos-weight', type=float, default=None,
                    help='Positive weighting for BCE loss.')
+# LWAL args
 group.add_argument('--lwal-loss', action='store_true', default=False,
                    help='Enable Lwal Loss. Use with `--stationary-steps`.')
 group.add_argument('--stationary-steps', type=int, default=1,
@@ -315,6 +316,8 @@ group.add_argument('--lwal-pairwise-fn', type=str, default='dist',
                    help="Whether to use pairwise_dist or pairwise_cos.")
 group.add_argument('--verbose', type=bool, default=False, 
                    help="Whether to print a bunch of stuff")
+group.add_argument('--lwal-centroid-freeze-steps', type=int, default=None, 
+                   help="Which step to stop updating centroids")
 group.add_argument('--early-stop', type=int, default=None,
                    help="Sets an early stop to quit at.")
 group.add_argument('--reprob', type=float, default=0., metavar='PCT',
@@ -809,6 +812,7 @@ def main():
             pairwise_fn=args.lwal_pairwise_fn,
             verbose=args.verbose,
             early_stop=args.early_stop,
+            lwal_centroid_freeze_steps=args.lwal_centroid_freeze_steps,
             # BCE params
             # target_threshold=args.bce_target_thresh,
             # sum_classes=args.bce_sum,

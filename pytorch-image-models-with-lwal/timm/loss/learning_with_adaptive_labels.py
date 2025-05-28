@@ -143,6 +143,7 @@ class LearningWithAdaptiveLabels(nn.Module):
             device: torch.device,
             current_step: int = 1,
             num_features: int = 2048,
+            lwal_centroid_freeze_steps: int = 100000000,
             # BCE args
             # smoothing=0.1,
             # target_threshold: Optional[float] = None,

@@ -188,6 +188,7 @@ class LearningWithAdaptiveLabels(nn.Module):
             num_features: int = 2048,
             verbose: bool = False,
             early_stop: bool = Optional[int],
+            lwal_centroid_freeze_steps: Optional[int] = None,
             # BCE args
             # smoothing=0.1,
             # target_threshold: Optional[float] = None,
@@ -208,6 +209,7 @@ class LearningWithAdaptiveLabels(nn.Module):
         self.pairwise_fn = pairwise_cosine_similarity if pairwise_fn == 'cos' else pairwise_dist
         self.verbose = verbose
         self.early_stop = early_stop
+        self.lwal_centroid_freeze_steps = lwal_centroid_freeze_steps
         self.maximum_element = 0
         self.maximum_norm = 0
     
@@ -236,7 +238,7 @@ class LearningWithAdaptiveLabels(nn.Module):
         self.device = x.device
         num_labels = self.num_classes
         structure_loss = 0
-        if self.current_step % self.stationary_steps == 0:
+        if (self.current_step % self.stationary_steps == 0) and (self.current_step <= self.lwal_centroid_freeze_steps):
             centroids = compute_centroids(x, target, self.num_classes)
             structure_loss = contrastive_loss(centroids)
             centroids = centroids.detach()
