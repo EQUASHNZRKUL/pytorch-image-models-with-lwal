@@ -3,6 +3,7 @@
 Hacked together by / Copyright 2021, Ross Wightman
 """
 import os
+import numpy as np
 from typing import Optional
 
 from torchvision.datasets import CIFAR100, CIFAR10, MNIST, KMNIST, FashionMNIST, ImageFolder
