@@ -238,7 +238,7 @@ class LearningWithAdaptiveLabels(nn.Module):
         self.device = x.device
         num_labels = self.num_classes
         structure_loss = 0
-        if (self.current_step % self.stationary_steps == 0) and (self.current_step <= self.lwal_centroid_freeze_steps):
+        if (self.current_step % self.stationary_steps == 0) and (self.lwal_centroid_freeze_steps is None or self.current_step <= self.lwal_centroid_freeze_steps):
             centroids = compute_centroids(x, target, self.num_classes)
             structure_loss = contrastive_loss(centroids)
             centroids = centroids.detach()
