@@ -127,7 +127,6 @@ class PrefetchLoader:
         else:
             stream = None
             stream_context = suppress
-        print(self.channels)
 
         for next_input, next_target in self.loader:
 
