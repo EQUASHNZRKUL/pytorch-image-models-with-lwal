@@ -243,6 +243,7 @@ class LearningWithAdaptiveLabels(nn.Module):
             structure_loss = contrastive_loss(centroids)
             centroids = centroids.detach()
             self.learnt_y = update_learnt_centroids(self.learnt_y, centroids, self.decay_factor, self.pairwise_fn == 'cos')
+            print(self.learnt_y)
             # structure_loss = cos_repel_loss_z_optimized(x, target)
 
         if self.early_stop and self.current_step == (self.early_stop*195):
