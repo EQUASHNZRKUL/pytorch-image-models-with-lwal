@@ -314,6 +314,8 @@ group.add_argument('--structure-loss-weight', type=float, default=1.0,
                    help="How much weight to give structure loss in em_loss calculation")
 group.add_argument('--lwal-pairwise-fn', type=str, default='dist', 
                    help="Whether to use pairwise_dist or pairwise_cos.")
+group.add_argument('--lwal-init-fn', type=str, default='dist', 
+                   help="Whether to use random or onehot learnt_y at start.")
 group.add_argument('--verbose', type=bool, default=False, 
                    help="Whether to print a bunch of stuff")
 group.add_argument('--lwal-centroid-freeze-steps', type=int, default=None, 
@@ -809,6 +811,7 @@ def main():
             current_step=0,
             decay_factor=args.decay_factor,
             structure_loss_weight=args.structure_loss_weight,
+            init_fn=args.lwal_init_fn,
             pairwise_fn=args.lwal_pairwise_fn,
             verbose=args.verbose,
             early_stop=args.early_stop,

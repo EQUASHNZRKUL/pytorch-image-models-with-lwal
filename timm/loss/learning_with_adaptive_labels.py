@@ -171,6 +171,15 @@ def contrastive_loss(centroids):
     return contrastive_loss
 
 
+def generate_random_orthogonal_vectors(num_classes, latent_dim, device, seed=None):
+    if seed is not None:
+        np.random.seed(seed)
+    
+    random_matrix = np.random.rand(latent_dim, num_classes)
+    Q, _ = np.linalg.qr(random_matrix)
+    return Q.T
+
+
 class LearningWithAdaptiveLabels(nn.Module):
     """ BCE with optional one-hot from dense targets, label smoothing, thresholding
     NOTE for experiments comparing CE to BCE /w label smoothing, may remove
@@ -183,7 +192,8 @@ class LearningWithAdaptiveLabels(nn.Module):
             device: torch.device,
             current_step: int = 1,
             decay_factor: float = 1.0,
-            structure_loss_weight: float = 10.0,
+            structure_loss_weight: float = 1.0,
+            init_fn: str = 'onehot',
             pairwise_fn: str = 'dist',
             num_features: int = 2048,
             verbose: bool = False,
@@ -202,7 +212,10 @@ class LearningWithAdaptiveLabels(nn.Module):
         self.num_classes = num_classes
         self.stationary_steps = stationary_steps
         self.current_step = current_step
-        self.learnt_y = torch.eye(num_classes, latent_dim, device=device)
+        self.learnt_y = (
+            generate_random_orthogonal_vectors(num_classes, latent_dim, device) 
+            if init_fn == 'random' 
+            else torch.eye(num_classes, latent_dim, device=device))
         self.decay_factor = decay_factor
         self.structure_loss_weight = structure_loss_weight
         self.pairwise_fn_name = pairwise_fn
