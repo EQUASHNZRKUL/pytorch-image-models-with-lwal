@@ -179,7 +179,7 @@ def generate_random_orthogonal_vectors(num_classes, latent_dim, device, seed=Non
     random_matrix = np.random.rand(latent_dim, num_classes)
     Q, _ = np.linalg.qr(random_matrix)
     orthogonal = torch.from_numpy(Q.T)
-    orthogonal.to(device)
+    orthogonal = orthogonal.to(device)
     return orthogonal
 
 
