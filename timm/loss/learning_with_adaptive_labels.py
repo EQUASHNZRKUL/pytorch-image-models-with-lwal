@@ -298,7 +298,7 @@ class LearningWithAdaptiveLabels(nn.Module):
         #               normed_dists)
 
         # structure_loss = cos_repel_loss_z_optimized(x, target)
-        print(x.dtype, target.dtype, self.learnt_y.dtype)
+        # print(x.dtype, target.dtype, self.learnt_y.dtype)
         input_loss = self.cross_entropy_pull_loss(x, target, self.learnt_y)
         em_loss = self.structure_loss_weight * structure_loss + 1.0 * input_loss
 
