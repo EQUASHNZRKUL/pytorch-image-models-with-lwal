@@ -23,6 +23,8 @@ def pairwise_dist(A, B):
 
 def pairwise_cosine_similarity(A, B):
     # Get norms of the vectors
+    A = A.to(torch.float16)
+    B = B.to(torch.float16)
     A_norm = torch.linalg.norm(A, dim=1, keepdim=True)
     B_norm = torch.linalg.norm(B, dim=1, keepdim=True)
 
@@ -180,7 +182,7 @@ def generate_random_orthogonal_vectors(num_classes, latent_dim, device, seed=Non
     Q, _ = np.linalg.qr(random_matrix)
     orthogonal = torch.from_numpy(Q.T)
     orthogonal = orthogonal.to(device)
-    return orthogonal.to(torch.float16)
+    return orthogonal
 
 
 class LearningWithAdaptiveLabels(nn.Module):
@@ -296,9 +298,6 @@ class LearningWithAdaptiveLabels(nn.Module):
         #               get_max_element(normed_dists),
         #               get_max_element(calculate_vector_norms(normed_dists)),
         #               normed_dists)
-
-        # structure_loss = cos_repel_loss_z_optimized(x, target)
-        # print(x.dtype, target.dtype, self.learnt_y.dtype)
         input_loss = self.cross_entropy_pull_loss(x, target, self.learnt_y)
         em_loss = self.structure_loss_weight * structure_loss + 1.0 * input_loss
 
