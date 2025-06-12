@@ -180,7 +180,7 @@ def generate_random_orthogonal_vectors(num_classes, latent_dim, device, seed=Non
     Q, _ = np.linalg.qr(random_matrix)
     orthogonal = torch.from_numpy(Q.T)
     orthogonal = orthogonal.to(device)
-    return orthogonal.double()
+    return orthogonal.to(torch.float16)
 
 
 class LearningWithAdaptiveLabels(nn.Module):
