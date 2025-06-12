@@ -221,6 +221,7 @@ class LearningWithAdaptiveLabels(nn.Module):
             generate_random_orthogonal_vectors(num_classes, latent_dim, device) 
             if init_fn == 'random' 
             else torch.eye(num_classes, latent_dim, device=device))
+        print(self.learnt_y)
         self.decay_factor = decay_factor
         self.structure_loss_weight = structure_loss_weight
         self.pairwise_fn_name = pairwise_fn
