@@ -284,7 +284,7 @@ class LearningWithAdaptiveLabels(nn.Module):
         # Accuracy prints (every 50 steps)
         if (self.current_step % 5) == 1 and self.verbose: 
             print('train_acc @ %s steps' % self.current_step, self.acc_helper(z, target, self.learnt_y))
-        if (self.current_step // 195) == 0:
+        if (self.current_step // 195) == 19:
             # print(target)
             idx = torch.argmax(target, dim=-1)
             # self.last_z_of_label[idx] = z.detach()
