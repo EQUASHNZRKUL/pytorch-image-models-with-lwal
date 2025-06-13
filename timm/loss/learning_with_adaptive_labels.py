@@ -231,6 +231,7 @@ class LearningWithAdaptiveLabels(nn.Module):
         self.lwal_centroid_freeze_steps = lwal_centroid_freeze_steps
         self.maximum_element = 0
         self.maximum_norm = 0
+        self.last_z_of_label = torch.zeros(num_classes, latent_dim, device=device)
     
     def get_learnt_y(self):
         return self.learnt_y
@@ -257,7 +258,12 @@ class LearningWithAdaptiveLabels(nn.Module):
         self.device = x.device
         num_labels = self.num_classes
         structure_loss = 0
-        if (self.current_step % self.stationary_steps == 0) and (self.lwal_centroid_freeze_steps is None or self.current_step <= self.lwal_centroid_freeze_steps):
+        update_centroids = (self.current_step % self.stationary_steps == 0)
+        # For freezing experiment
+        update_centroids = update_centroids and (self.lwal_centroid_freeze_steps is None or self.current_step <= self.lwal_centroid_freeze_steps)
+        # For experiment C 
+        update_centroids = update_centroids and ((self.current_step // 195) > 19)
+        if update_centroids
             centroids = compute_centroids(x, target, self.num_classes)
             structure_loss = contrastive_loss(centroids)
             centroids = centroids.detach()
@@ -278,7 +284,14 @@ class LearningWithAdaptiveLabels(nn.Module):
         # Accuracy prints (every 50 steps)
         if (self.current_step % 5) == 1 and self.verbose: 
             print('train_acc @ %s steps' % self.current_step, self.acc_helper(z, target, self.learnt_y))
+        if (self.current_step // 195) == 19:
+            idx = torch.argmax(one_hot_tensor, dim=-1)
+            self.last_z_of_label[idx] = z.detach()
         self.current_step += 1
+        if self.current_step == 3901:
+            print("Switching over to lwal mode")
+            self.learnt_y = self.last_z_of_label
+            print("Centroids are: ", self.learnt_y)
         # # Print data every epoch.
         # if (self.current_step % 195) == 194 and self.verbose:
         #     print('z', self.maximum_element, self.maximum_norm, z)
