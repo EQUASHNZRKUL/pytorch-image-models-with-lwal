@@ -262,13 +262,13 @@ class LearningWithAdaptiveLabels(nn.Module):
         # For freezing experiment
         update_centroids = update_centroids and (self.lwal_centroid_freeze_steps is None or self.current_step <= self.lwal_centroid_freeze_steps)
         # For experiment C 
-        update_centroids = update_centroids and ((self.current_step // 195) > 19)
+        # update_centroids = update_centroids and ((self.current_step // 195) > 19)
         if update_centroids:
             centroids = compute_centroids(x, target, self.num_classes)
             structure_loss = contrastive_loss(centroids)
             centroids = centroids.detach()
             self.learnt_y = update_learnt_centroids(self.learnt_y, centroids, self.decay_factor, self.pairwise_fn == 'cos')
-            print(self.learnt_y)
+            # print(self.learnt_y)
             # structure_loss = cos_repel_loss_z_optimized(x, target)
 
         if self.early_stop and self.current_step == (self.early_stop*195):
@@ -284,18 +284,20 @@ class LearningWithAdaptiveLabels(nn.Module):
         # Accuracy prints (every 50 steps)
         if (self.current_step % 5) == 1 and self.verbose: 
             print('train_acc @ %s steps' % self.current_step, self.acc_helper(z, target, self.learnt_y))
-        if (self.current_step // 195) == 19:
-            # print(target)
-            idx = torch.argmax(target, dim=-1)
-            # self.last_z_of_label[idx] = z.detach()
-            for i in range(z.size(0)):
-                label = idx[i].item()
-                self.last_z_of_label[label] = z[i].detach()
+        # Experiment C
+        # if (self.current_step // 195) == 19:
+        #     # print(target)
+        #     idx = torch.argmax(target, dim=-1)
+        #     # self.last_z_of_label[idx] = z.detach()
+        #     for i in range(z.size(0)):
+        #         label = idx[i].item()
+        #         self.last_z_of_label[label] = z[i].detach()
         self.current_step += 1
-        if self.current_step == 3901:
-            print("Switching over to lwal mode")
-            self.learnt_y = self.last_z_of_label
-            print("Centroids are: ", self.learnt_y)
+        # Experiment C
+        # if self.current_step == 3901:
+        #     print("Switching over to lwal mode")
+        #     self.learnt_y = self.last_z_of_label
+        #     print("Centroids are: ", self.learnt_y)
         # # Print data every epoch.
         # if (self.current_step % 195) == 194 and self.verbose:
         #     print('z', self.maximum_element, self.maximum_norm, z)
