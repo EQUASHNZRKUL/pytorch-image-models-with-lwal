@@ -263,7 +263,6 @@ class LearningWithAdaptiveLabels(nn.Module):
         self.device = x.device
         num_labels = self.num_classes
         structure_loss = 0
-        # adj_stationary_steps = int(self.stationary_steps * math.exp(self.exp_stationary_step_decay_factor)
         update_centroids = (self.current_step % int(self.stationary_steps) == 0)
         # For freezing experiment
         update_centroids = update_centroids and (self.lwal_centroid_freeze_steps is None or self.current_step <= self.lwal_centroid_freeze_steps)
@@ -276,8 +275,8 @@ class LearningWithAdaptiveLabels(nn.Module):
             self.learnt_y = update_learnt_centroids(self.learnt_y, centroids, self.decay_factor, self.pairwise_fn == 'cos', self.exp_centroid_decay_factor)
             # print(self.learnt_y)
             # structure_loss = cos_repel_loss_z_optimized(x, target)
-            self.stationary_steps *= math.exp(exp_stationary_step_decay_factor)
-            self.decay_factor *= math.exp(exp_centroid_decay_factor)
+            self.stationary_steps *= math.exp(self.exp_stationary_step_decay_factor)
+            self.decay_factor *= math.exp(self.exp_centroid_decay_factor)
 
         if self.early_stop and self.current_step == (self.early_stop*195):
             if self.verbose: 
