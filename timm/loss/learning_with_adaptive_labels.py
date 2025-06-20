@@ -4,6 +4,7 @@ Hacked together by / Copyright 2021 Ross Wightman
 """
 from typing import Optional, Union
 
+import math
 import numpy as np
 import torch
 import torch.nn as nn
@@ -95,7 +96,7 @@ def update_learnt_centroids_new(learnt_y, centroids, decay_factor=1.0, norm_lear
 
     return new_learnt_y
 
-def update_learnt_centroids(learnt_y, centroids, decay_factor=1.0, norm_learnt_y: bool=False):
+def update_learnt_centroids(learnt_y, centroids, decay_factor=1.0, norm_learnt_y: bool=False, exp_centroid_decay_factor=0.0):
     num_classes, latent_dim = learnt_y.shape  # Get dimensions
     new_learnt_y = []
     
@@ -103,7 +104,8 @@ def update_learnt_centroids(learnt_y, centroids, decay_factor=1.0, norm_learnt_y
         enc_y = centroids[i]
         if torch.count_nonzero(enc_y) == 0:  # Check if all zero
             enc_y = learnt_y[i]
-        new_enc_y = decay_factor * enc_y + (1 - decay_factor) * learnt_y[i]
+        adj_decay_factor = decay_factor * math.exp(exp_centroid_decay_factor)
+        new_enc_y = adj_decay_factor * enc_y + (1 - adj_decay_factor) * learnt_y[i]
         new_learnt_y.append(new_enc_y)
 
     if norm_learnt_y:
@@ -204,6 +206,8 @@ class LearningWithAdaptiveLabels(nn.Module):
             verbose: bool = False,
             early_stop: bool = Optional[int],
             lwal_centroid_freeze_steps: Optional[int] = None,
+            exp_centroid_decay_factor: float = 0.0,
+            exp_stationary_step_decay_factor: float = 0.0,
             # BCE args
             # smoothing=0.1,
             # target_threshold: Optional[float] = None,
@@ -229,6 +233,8 @@ class LearningWithAdaptiveLabels(nn.Module):
         self.verbose = verbose
         self.early_stop = early_stop
         self.lwal_centroid_freeze_steps = lwal_centroid_freeze_steps
+        self.exp_centroid_decay_factor = exp_centroid_decay_factor
+        self.exp_stationary_step_decay_factor = exp_stationary_step_decay_factor
         self.maximum_element = 0
         self.maximum_norm = 0
         self.last_z_of_label = torch.zeros(num_classes, latent_dim, device=device)
@@ -258,7 +264,8 @@ class LearningWithAdaptiveLabels(nn.Module):
         self.device = x.device
         num_labels = self.num_classes
         structure_loss = 0
-        update_centroids = (self.current_step % self.stationary_steps == 0)
+        adj_stationary_steps = int(self.stationary_steps * math.exp(self.exp_stationary_step_decay_factor)
+        update_centroids = (self.current_step % adj_stationary_steps) == 0)
         # For freezing experiment
         update_centroids = update_centroids and (self.lwal_centroid_freeze_steps is None or self.current_step <= self.lwal_centroid_freeze_steps)
         # For experiment C 
@@ -267,7 +274,7 @@ class LearningWithAdaptiveLabels(nn.Module):
             centroids = compute_centroids(x, target, self.num_classes)
             structure_loss = contrastive_loss(centroids)
             centroids = centroids.detach()
-            self.learnt_y = update_learnt_centroids(self.learnt_y, centroids, self.decay_factor, self.pairwise_fn == 'cos')
+            self.learnt_y = update_learnt_centroids(self.learnt_y, centroids, self.decay_factor, self.pairwise_fn == 'cos', self.exp_centroid_decay_factor)
             # print(self.learnt_y)
             # structure_loss = cos_repel_loss_z_optimized(x, target)
 

@@ -322,6 +322,11 @@ group.add_argument('--lwal-centroid-freeze-steps', type=int, default=None,
                    help="Which step to stop updating centroids")
 group.add_argument('--early-stop', type=int, default=None,
                    help="Sets an early stop to quit at.")
+group.add_argument('--exp-centroid-decay-factor', type=float, default=0.0, 
+                   help="Decay constant for centroid changes")
+group.add_argument('--exp-stationary-step-decay-factor', type=float, default=0.0, 
+                   help="Decay constant for centroid changes")
+
 group.add_argument('--reprob', type=float, default=0., metavar='PCT',
                    help='Random erase prob (default: 0.)')
 group.add_argument('--remode', type=str, default='pixel',
@@ -816,6 +821,8 @@ def main():
             verbose=args.verbose,
             early_stop=args.early_stop,
             lwal_centroid_freeze_steps=args.lwal_centroid_freeze_steps,
+            exp_centroid_decay_factor=args.exp_centroid_decay_factor,
+            exp_stationary_step_decay_factor=args.exp_stationary_step_decay_factor,
             # BCE params
             # target_threshold=args.bce_target_thresh,
             # sum_classes=args.bce_sum,
