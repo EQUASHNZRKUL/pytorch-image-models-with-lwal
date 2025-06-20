@@ -264,7 +264,7 @@ class LearningWithAdaptiveLabels(nn.Module):
         num_labels = self.num_classes
         structure_loss = 0
         # adj_stationary_steps = int(self.stationary_steps * math.exp(self.exp_stationary_step_decay_factor)
-        update_centroids = (self.current_step % int(self.stationary_steps)) == 0)
+        update_centroids = (self.current_step % int(self.stationary_steps) == 0)
         # For freezing experiment
         update_centroids = update_centroids and (self.lwal_centroid_freeze_steps is None or self.current_step <= self.lwal_centroid_freeze_steps)
         # For experiment C 
