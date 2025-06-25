@@ -287,6 +287,7 @@ class LearningWithAdaptiveLabels(nn.Module):
                 print(self.learnt_y)
             print('pairwise cosine sim of learnt_y x learnt_y')
             print(pairwise_cosine_similarity(self.learnt_y, self.learnt_y))
+            print(self.last_z_of_label)
             raise KeyboardInterrupt()
         
         self.maximum_element = max(self.maximum_element, get_max_element(z))
@@ -295,13 +296,13 @@ class LearningWithAdaptiveLabels(nn.Module):
         if (self.current_step % 5) == 1 and self.verbose: 
             print('train_acc @ %s steps' % self.current_step, self.acc_helper(z, target, self.learnt_y))
         # Experiment C
-        # if (self.current_step // 195) == 19:
-        #     # print(target)
-        #     idx = torch.argmax(target, dim=-1)
-        #     # self.last_z_of_label[idx] = z.detach()
-        #     for i in range(z.size(0)):
-        #         label = idx[i].item()
-        #         self.last_z_of_label[label] = z[i].detach()
+        if (self.current_step // 195) == 19:
+            # print(target)
+            idx = torch.argmax(target, dim=-1)
+            # self.last_z_of_label[idx] = z.detach()
+            for i in range(z.size(0)):
+                label = idx[i].item()
+                self.last_z_of_label[label] = z[i].detach()
         self.current_step += 1
         # Experiment C
         # if self.current_step == 3901:
