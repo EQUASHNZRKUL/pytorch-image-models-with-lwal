@@ -1100,11 +1100,12 @@ def train_one_epoch(
             # print(1022, device.type)
             nonlocal learnt_y
             with amp_autocast(device_type=device.type, dtype=torch.bfloat16):
-                output = model(input)
                 if args.lwal_loss:
-                    loss, learnt_y = loss_fn(output, target)
+                    z = model.forward_features(input)
+                    loss, learnt_y = loss_fn(z, target)
                 else:
                     loss = loss_fn(output, target)
+                    output = model(input)
             if accum_steps > 1:
                 loss /= accum_steps
             # torchviz.make_dot(loss, params=dict(model.named_parameters())).render("loss_graph", format="png")
