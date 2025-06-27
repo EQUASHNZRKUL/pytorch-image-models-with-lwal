@@ -1102,7 +1102,7 @@ def train_one_epoch(
             with amp_autocast(device_type=device.type, dtype=torch.bfloat16):
                 if args.lwal_loss:
                     # z = model.forward_features(input)
-                    output = model(input)
+                    z = model(input)
                     loss, learnt_y = loss_fn(z, target)
                 else:
                     output = model(input)
