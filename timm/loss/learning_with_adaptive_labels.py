@@ -426,7 +426,7 @@ class LearningWithAdaptiveLabels(nn.Module):
             case 'random':
                 self.learnt_y = generate_random_orthogonal_vectors(num_classes, latent_dim, device) 
             case 'learnt':
-                self.learnt_y = LAST_Z_OF_LABEL
+                self.learnt_y = LAST_Z_OF_LABEL.to(device)
             case _:
                 self.learnt_y = torch.eye(num_classes, latent_dim, device=device)
         print(self.learnt_y)
