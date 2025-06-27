@@ -287,6 +287,7 @@ class LearningWithAdaptiveLabels(nn.Module):
                 print(self.learnt_y)
             print('pairwise cosine sim of learnt_y x learnt_y')
             print(pairwise_cosine_similarity(self.learnt_y, self.learnt_y))
+            print("last z's of each label (to be used as centroids for next run)")
             print(self.last_z_of_label)
             raise KeyboardInterrupt()
         
