@@ -476,7 +476,7 @@ class LearningWithAdaptiveLabels(nn.Module):
 
         if self.averaging_centroids:
             class_indices = torch.argmax(target, dim=-1)
-            self.learnt_y_sums.index_add_(0, class_indices, z)
+            self.learnt_y_sums.index_add_(0, class_indices, z.to(torch.float32))
             self.learnt_y_counts.index_add_(
                 0, 
                 class_indices, 
