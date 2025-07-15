@@ -480,8 +480,7 @@ class LearningWithAdaptiveLabels(nn.Module):
             self.learnt_y_counts.index_add_(
                 0, 
                 class_indices, 
-                torch.ones_like(class_indices),
-                dtype=torch.float
+                torch.ones_like(class_indices, dtype=torch.float)
             )
 
         update_centroids = (self.current_step % int(self.stationary_steps) == 0)
