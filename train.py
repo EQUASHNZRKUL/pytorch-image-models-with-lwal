@@ -326,6 +326,8 @@ group.add_argument('--exp-centroid-decay-factor', type=float, default=0.0,
                    help="Decay constant for centroid changes")
 group.add_argument('--exp-stationary-step-decay-factor', type=float, default=0.0, 
                    help="Decay constant for centroid changes")
+group.add_argument('--averaging-centroids', type=bool, default=False, 
+                   help="Whether to average or update centroids")
 
 group.add_argument('--reprob', type=float, default=0., metavar='PCT',
                    help='Random erase prob (default: 0.)')
@@ -823,6 +825,7 @@ def main():
             lwal_centroid_freeze_steps=args.lwal_centroid_freeze_steps,
             exp_centroid_decay_factor=args.exp_centroid_decay_factor,
             exp_stationary_step_decay_factor=args.exp_stationary_step_decay_factor,
+            averaging_centroids=args.averaging_centroids
             # BCE params
             # target_threshold=args.bce_target_thresh,
             # sum_classes=args.bce_sum,

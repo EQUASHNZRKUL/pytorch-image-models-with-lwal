@@ -408,6 +408,7 @@ class LearningWithAdaptiveLabels(nn.Module):
             lwal_centroid_freeze_steps: Optional[int] = None,
             exp_centroid_decay_factor: float = 0.0,
             exp_stationary_step_decay_factor: float = 0.0,
+            averaging_centroids: bool = False,
             # BCE args
             # smoothing=0.1,
             # target_threshold: Optional[float] = None,
@@ -442,6 +443,9 @@ class LearningWithAdaptiveLabels(nn.Module):
         self.maximum_element = 0
         self.maximum_norm = 0
         self.last_z_of_label = torch.zeros(num_classes, latent_dim, device=device)
+        self.averaging_centroids = averaging_centroids
+        self.learnt_y_sums = torch.zeros(num_classes, latent_dim, device=device)
+        self.learnt_y_counts = torch.zeros(num_classes, device=device)
     
     def get_learnt_y(self):
         return self.learnt_y
@@ -469,12 +473,32 @@ class LearningWithAdaptiveLabels(nn.Module):
         num_labels = self.num_classes
         structure_loss = 0
         stationary_steps_adj = self.stationary_steps
+
+        if self.averaging_centroids:
+            class_indices = torch.argmax(target, dim=-1)
+            self.learnt_y_sums.index_add_(0, class_indices, z)
+            self.learnt_y_counts.index_add_(
+                0, 
+                class_indices, 
+                torch.ones_like(class_indices),
+                dtype=torch.float
+            )
+
         update_centroids = (self.current_step % int(self.stationary_steps) == 0)
         # For freezing experiment
         update_centroids = update_centroids and (self.lwal_centroid_freeze_steps is None or self.current_step <= self.lwal_centroid_freeze_steps)
         # For experiment C 
         # update_centroids = update_centroids and ((self.current_step // 195) > 19)
-        if update_centroids:
+        if update_centroids and self.averaging_centroids:
+            # centroids = compute_centroids()
+            centroids = self.learnt_y_sum / self.learnt_y_counts
+            self.learnt_y_sums = torch.zeros(num_classes, latent_dim, device=device)
+            self.learnt_y_counts = torch.zeros(num_classes, device=device)
+            structure_loss = contrastive_loss(centroids)
+            centroids = centroids.detach()
+            decay_factor_adj = self.decay_factor * math.exp(self.current_step / self.stationary_steps * self.exp_centroid_decay_factor)
+            self.learnt_y = update_learnt_centroids(self.learnt_y, centroids, decay_factor_adj, self.pairwise_fn == 'cos', self.exp_centroid_decay_factor)
+        elif update_centroids:
             centroids = compute_centroids(x, target, self.num_classes)
             structure_loss = contrastive_loss(centroids)
             centroids = centroids.detach()
