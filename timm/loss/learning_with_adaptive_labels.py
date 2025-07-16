@@ -423,6 +423,7 @@ class LearningWithAdaptiveLabels(nn.Module):
         self.stationary_steps = stationary_steps
         self.current_step = current_step
         self.learnt_y = None
+        self.device = device
         match init_fn:
             case 'random':
                 self.learnt_y = generate_random_orthogonal_vectors(num_classes, latent_dim, device) 
@@ -491,8 +492,8 @@ class LearningWithAdaptiveLabels(nn.Module):
         if update_centroids and self.averaging_centroids:
             # centroids = compute_centroids()
             centroids = self.learnt_y_sums / self.learnt_y_counts.unsqueeze(1)
-            self.learnt_y_sums = torch.zeros(self.num_classes, self.latent_dim, device=device)
-            self.learnt_y_counts = torch.zeros(self.num_classes, device=device)
+            self.learnt_y_sums = torch.zeros(self.num_classes, self.latent_dim, device=self.device)
+            self.learnt_y_counts = torch.zeros(self.num_classes, device=self.device)
             structure_loss = contrastive_loss(centroids)
             centroids = centroids.detach()
             decay_factor_adj = self.decay_factor * math.exp(self.current_step / self.stationary_steps * self.exp_centroid_decay_factor)
