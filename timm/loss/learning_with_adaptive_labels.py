@@ -490,7 +490,7 @@ class LearningWithAdaptiveLabels(nn.Module):
         # update_centroids = update_centroids and ((self.current_step // 195) > 19)
         if update_centroids and self.averaging_centroids:
             # centroids = compute_centroids()
-            centroids = self.learnt_y_sums / self.learnt_y_counts
+            centroids = self.learnt_y_sums / self.learnt_y_counts.unsqueeze(1)
             self.learnt_y_sums = torch.zeros(num_classes, latent_dim, device=device)
             self.learnt_y_counts = torch.zeros(num_classes, device=device)
             structure_loss = contrastive_loss(centroids)
