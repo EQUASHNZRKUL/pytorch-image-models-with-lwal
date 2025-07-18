@@ -476,7 +476,8 @@ class LearningWithAdaptiveLabels(nn.Module):
         stationary_steps_adj = self.stationary_steps
 
         if self.averaging_centroids:
-            class_indices = torch.argmax(target, dim=-1)
+            target_clone = target.clone()
+            class_indices = torch.argmax(target_clone, dim=-1)
             self.learnt_y_sums.index_add_(0, class_indices, z.to(torch.float32))
             self.learnt_y_counts.index_add_(
                 0, 
