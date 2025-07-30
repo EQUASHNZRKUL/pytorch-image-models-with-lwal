@@ -474,8 +474,12 @@ class ResNetV2(nn.Module):
             assert not basic
             block_fn = Bottleneck
         self.stages = nn.Sequential()
+        N = len(zip(layers, channels, block_dprs))
         for stage_idx, (d, c, bdpr) in enumerate(zip(layers, channels, block_dprs)):
             out_chs = make_divisible(c * wf)
+            if stage_idx == N-1:
+                # last layer
+                out_chs = num_classes
             stride = 1 if stage_idx == 0 else 2
             if curr_stride >= output_stride:
                 dilation *= stride
@@ -557,7 +561,7 @@ class ResNetV2(nn.Module):
 
     def forward(self, x):
         x = self.forward_features(x)
-        x = self.forward_head(x)
+        # x = self.forward_head(x)
         return x
 
 
