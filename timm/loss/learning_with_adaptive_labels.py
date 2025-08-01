@@ -1862,7 +1862,7 @@ class LearningWithAdaptiveLabels(nn.Module):
             # structure_loss = cos_repel_loss_z_optimized(x, target)
             # self.stationary_steps *= math.exp(self.exp_stationary_step_decay_factor)
             # self.decay_factor *= math.exp(self.exp_centroid_decay_factor)
-            print('new stationary_steps and decay_factor', stationary_steps_adj, decay_factor_adj)
+            # print('new stationary_steps and decay_factor', stationary_steps_adj, decay_factor_adj)
 
         if self.early_stop and self.current_step == (self.early_stop*195):
             if self.verbose: 
