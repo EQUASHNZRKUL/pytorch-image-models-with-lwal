@@ -9,9 +9,10 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import lwal_constants
 
 from collections import defaultdict
+
+from timm.loss.lwal_constants import *
 
 # tensor([[ 2.0538e+02,  1.4069e+02, -5.9971e+00,  4.2445e+01,  6.9692e+01, -3.7138e+01,  5.3473e+01, -2.6922e+01, -1.5774e+01, -1.8526e+02],
 #         [ 1.4069e+02,  2.4068e+02,  2.4944e+01, -6.3079e+01,  9.4263e+01, -6.7743e+01,  6.7902e+01, -3.5117e+00,  1.2541e+02, -1.6306e+02],
@@ -250,9 +251,9 @@ class LearningWithAdaptiveLabels(nn.Module):
             case 'random':
                 self.learnt_y = generate_random_orthogonal_vectors(num_classes, latent_dim, device) 
             case 'learnt':
-                self.learnt_y = lwal_constants.LAST_Z_OF_LABEL.to(device)
+                self.learnt_y = LAST_Z_OF_LABEL.to(device)
             case 'vit':
-                self.learnt_y = lwal_constants.VIT_Z_OF_LABEL.to(device)
+                self.learnt_y = VIT_Z_OF_LABEL.to(device)
             case 'simplex':
                 self.learnt_y = regular_simplex(n=num_classes, d=latent_dim)
             case _:
