@@ -255,7 +255,7 @@ class LearningWithAdaptiveLabels(nn.Module):
             case 'vit':
                 self.learnt_y = VIT_Z_OF_LABEL.to(device)
             case 'simplex':
-                self.learnt_y = regular_simplex(n=num_classes, d=latent_dim)
+                self.learnt_y = regular_simplex(n=num_classes, d=latent_dim).to(device)
             case _:
                 self.learnt_y = torch.eye(num_classes, latent_dim, device=device)
         print(self.learnt_y)
