@@ -34,7 +34,7 @@ def regular_simplex(n: int, d: int = None) -> np.ndarray:
     if d > n - 1:
         coords = np.hstack([coords, np.zeros((n, d - (n - 1)))])
 
-    return coords
+    return torch.from_numpy(coords)
 
 def pairwise_dist(A, B):
     na = torch.sum(A**2, dim=1)
