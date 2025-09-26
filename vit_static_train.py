@@ -1,9 +1,6 @@
-from datasets import load_dataset
+# from datasets import load_dataset
 from transformers import AutoImageProcessor
 from ViTWithLabelReps import ViTWithLabelReps, ViTWithStaticLabelReps
-
-# Load CIFAR-10
-dataset = load_dataset("cifar10")
 
 # HuggingFace ViT requires pixel pre-processing
 processor = AutoImageProcessor.from_pretrained("google/vit-base-patch16-224-in21k")
