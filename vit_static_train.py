@@ -69,7 +69,7 @@ for epoch in range(5):  # example: 5 epochs
     with torch.no_grad():
         for imgs, labels in test_loader:
             imgs, labels = imgs.to(device), labels.to(device)
-            logits, _ = model(imgs)
+            _, logits = model(imgs)
             total_correct += (logits.argmax(dim=-1) == labels).sum().item()
             total += labels.size(0)
 
