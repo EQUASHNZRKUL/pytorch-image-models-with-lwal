@@ -21,15 +21,18 @@ def parse_and_output_csv(input_str):
         return
 
     # Print CSV header
-    print("epoch,top1_accuracy")
+    print("epoch,top1_accuracy,train_loss,val_loss")
 
     # Print each row
     for entry in data:
         epoch = entry.get("epoch", "")
+        train = entry.get("train", {})
+        train_loss = train.get("loss", "")
         val = entry.get("validation", {})
         top1 = val.get("top1", "")
+        val_loss = val.get("loss", "")
         # top5 = val.get("top5", "")
-        print(f"{epoch},{top1}")
+        print(f"{epoch},{top1},{train_loss},{val_loss}")
 
 if __name__ == "__main__":
     input_str = sys.stdin.read()
