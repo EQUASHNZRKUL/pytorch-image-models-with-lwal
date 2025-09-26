@@ -8,17 +8,21 @@ dataset = load_dataset("cifar10")
 # HuggingFace ViT requires pixel pre-processing
 processor = AutoImageProcessor.from_pretrained("google/vit-base-patch16-224-in21k")
 
-def transform(example):
-    example["pixel_values"] = processor(images=example["img"], return_tensors="pt")["pixel_values"][0]
-    return example
+transform = T.Compose([
+    T.Resize((224, 224)),
+    T.ToTensor(),
+    T.Normalize(mean=processor.image_mean, std=processor.image_std),
+])
 
-dataset = dataset.with_transform(transform)
+train_dataset = torchvision.datasets.CIFAR10(
+    root="./data", train=True, download=True, transform=transform
+)
+test_dataset = torchvision.datasets.CIFAR10(
+    root="./data", train=False, download=True, transform=transform
+)
 
-# Define DataCollator
-def collate_fn(batch):
-    pixel_values = torch.stack([x["pixel_values"] for x in batch])
-    labels = torch.tensor([x["label"] for x in batch])
-    return {"pixel_values": pixel_values, "labels": labels}
+train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True, num_workers=4)
+test_loader = DataLoader(test_dataset, batch_size=64, shuffle=False, num_workers=4)
 
 # Define label representation
 import torch
@@ -33,36 +37,73 @@ model = ViTWithStaticLabelReps(
 )
 
 # Set up and run trainer
-from transformers import TrainingArguments, Trainer
 
-training_args = TrainingArguments(
-    output_dir="./results",
-    evaluation_strategy="epoch",
-    save_strategy="epoch",
-    learning_rate=5e-5,
-    per_device_train_batch_size=64,
-    per_device_eval_batch_size=64,
-    num_train_epochs=10,
-    weight_decay=0.01,
-    logging_dir="./logs",
-    logging_steps=50,
-    load_best_model_at_end=True,
-)
+# Training loop
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+model = ViTWithStaticLabelReps("google/vit-base-patch16-224-in21k", label_reps).to(device)
 
-def compute_metrics(eval_pred):
-    logits, labels = eval_pred
-    preds = logits.argmax(axis=-1)
-    acc = (preds == labels).mean()
-    return {"accuracy": acc}
+optimizer = torch.optim.AdamW(model.parameters(), lr=5e-5)
 
-trainer = Trainer(
-    model=model,
-    args=training_args,
-    train_dataset=dataset["train"],
-    eval_dataset=dataset["test"],
-    data_collator=collate_fn,
-    tokenizer=processor,
-    compute_metrics=compute_metrics,
-)
+for epoch in range(5):  # example: 5 epochs
+    model.train()
+    total_loss, total_correct = 0, 0
+    for imgs, labels in train_loader:
+        imgs, labels = imgs.to(device), labels.to(device)
+        logits, loss = model(imgs, labels)
 
-trainer.train()
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+
+        total_loss += loss.item() * imgs.size(0)
+        total_correct += (logits.argmax(dim=-1) == labels).sum().item()
+
+    train_loss = total_loss / len(train_loader.dataset)
+    train_acc = total_correct / len(train_loader.dataset)
+
+    # Eval
+    model.eval()
+    total_correct, total = 0, 0
+    with torch.no_grad():
+        for imgs, labels in test_loader:
+            imgs, labels = imgs.to(device), labels.to(device)
+            logits, _ = model(imgs)
+            total_correct += (logits.argmax(dim=-1) == labels).sum().item()
+            total += labels.size(0)
+
+    test_acc = total_correct / total
+    print(f"Epoch {epoch+1}: loss={train_loss:.4f}, train_acc={train_acc:.4f}, test_acc={test_acc:.4f}")
+
+# from transformers import TrainingArguments, Trainer
+
+# training_args = TrainingArguments(
+#     output_dir="./results",
+#     evaluation_strategy="epoch",
+#     save_strategy="epoch",
+#     learning_rate=5e-5,
+#     per_device_train_batch_size=64,
+#     per_device_eval_batch_size=64,
+#     num_train_epochs=10,
+#     weight_decay=0.01,
+#     logging_dir="./logs",
+#     logging_steps=50,
+#     load_best_model_at_end=True,
+# )
+
+# def compute_metrics(eval_pred):
+#     logits, labels = eval_pred
+#     preds = logits.argmax(axis=-1)
+#     acc = (preds == labels).mean()
+#     return {"accuracy": acc}
+
+# trainer = Trainer(
+#     model=model,
+#     args=training_args,
+#     train_dataset=train_loader,
+#     eval_dataset=test_loader,
+#     data_collator=collate_fn,
+#     tokenizer=processor,
+#     compute_metrics=compute_metrics,
+# )
+
+# trainer.train()
