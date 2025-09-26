@@ -63,7 +63,7 @@ class ViTWithLabelReps(nn.Module):
                 ortho_loss = ((gram - I) ** 2).mean()
                 loss = loss + self.reg_strength * ortho_loss
 
-        return {"loss": loss, "logits": logits}
+        return loss, logits
 
 class ViTWithStaticLabelReps(nn.Module):
     def __init__(
@@ -109,4 +109,4 @@ class ViTWithStaticLabelReps(nn.Module):
         if labels is not None:
             loss = F.cross_entropy(logits, labels)
 
-        return {"loss": loss, "logits": logits}
+        return loss, logits
