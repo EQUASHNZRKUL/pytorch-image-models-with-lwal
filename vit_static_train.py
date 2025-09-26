@@ -51,7 +51,7 @@ for epoch in range(5):  # example: 5 epochs
     total_loss, total_correct = 0, 0
     for imgs, labels in train_loader:
         imgs, labels = imgs.to(device), labels.to(device)
-        logits, loss = model(imgs, labels)
+        loss, logits = model(imgs, labels)
 
         optimizer.zero_grad()
         loss.backward()
