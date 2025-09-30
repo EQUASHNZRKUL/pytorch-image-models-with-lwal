@@ -28,12 +28,9 @@ from timm.loss.lwal_constants import *
 def regular_simplex(n: int, d: int = None) -> np.ndarray:
     M = np.eye(n) - np.ones((n, n)) / n
     coords = M[:, :-1]  # shape (n, n-1)
-
     coords /= np.linalg.norm(coords[0])
-
     if d > n - 1:
         coords = np.hstack([coords, np.zeros((n, d - (n - 1)))])
-
     return torch.from_numpy(coords)
 
 def pairwise_dist(A, B):
@@ -209,6 +206,12 @@ def generate_random_orthogonal_vectors(num_classes, latent_dim, device, seed=Non
     orthogonal = orthogonal.to(device)
     return orthogonal
 
+def perturb_embeddings_gaussian(learnt_y, sigma = 0.01):
+    noise = torch.randn_like(learnt_y) * sigma
+    noise = noise.abs()
+    learnt_y = learnt_y + noise
+    learnt_y = torch.nn.functional.normalize(learnt_y, p=2, dim=1)
+    return learnt_y
 
 class LearningWithAdaptiveLabels(nn.Module):
     """ BCE with optional one-hot from dense targets, label smoothing, thresholding
@@ -232,6 +235,7 @@ class LearningWithAdaptiveLabels(nn.Module):
             exp_centroid_decay_factor: float = 0.0,
             exp_stationary_step_decay_factor: float = 0.0,
             averaging_centroids: bool = False,
+            sigma: float = 0.01,
             # BCE args
             # smoothing=0.1,
             # target_threshold: Optional[float] = None,
@@ -250,6 +254,11 @@ class LearningWithAdaptiveLabels(nn.Module):
         match init_fn:
             case 'random':
                 self.learnt_y = generate_random_orthogonal_vectors(num_classes, latent_dim, device) 
+            case 'perturbed':
+                self.learnt_y = torch.eye(num_classes, latent_dim, device=device)
+                self.learnt_y = perturb_embeddings_gaussian(self.learnt_y, sigma)
+                print('pairwise cosine sim of learnt_y x learnt_y after perturbation.')
+                print(pairwise_cosine_similarity(self.learnt_y, self.learnt_y))
             case 'learnt':
                 self.learnt_y = LAST_Z_OF_LABEL.to(device)
             case 'vit':
