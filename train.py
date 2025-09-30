@@ -328,7 +328,7 @@ group.add_argument('--exp-stationary-step-decay-factor', type=float, default=0.0
                    help="Decay constant for centroid changes")
 group.add_argument('--averaging-centroids', type=bool, default=False, 
                    help="Whether to average or update centroids")
-group.add_argument('--perturbation_sigma', type=float, default=0.01,
+group.add_argument('--perturbation-sigma', type=float, default=0.01,
                    help="coefficient of how much to perturb one-hot by if init_fn is perturbed.")
 
 group.add_argument('--reprob', type=float, default=0., metavar='PCT',
