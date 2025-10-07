@@ -832,6 +832,8 @@ def main():
             exp_stationary_step_decay_factor=args.exp_stationary_step_decay_factor,
             averaging_centroids=args.averaging_centroids,
             sigma=args.perturbation_sigma,
+            dot=args.dot,
+            ang_deg=args.ang_deg,
             # BCE params
             # target_threshold=args.bce_target_thresh,
             # sum_classes=args.bce_sum,
