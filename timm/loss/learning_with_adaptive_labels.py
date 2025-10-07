@@ -206,12 +206,66 @@ def generate_random_orthogonal_vectors(num_classes, latent_dim, device, seed=Non
     orthogonal = orthogonal.to(device)
     return orthogonal
 
-def perturb_embeddings_gaussian(learnt_y, sigma = 0.01):
-    noise = torch.randn_like(learnt_y) * sigma
+def perturb_embeddings_gaussian(learnt_y, eps = 0.01):
+    noise = torch.randn_like(learnt_y) * eps
     noise = noise.abs()
     learnt_y = learnt_y + noise
     learnt_y = torch.nn.functional.normalize(learnt_y, p=2, dim=1)
     return learnt_y
+
+def make_equally_spaced_embeddings(
+    N: int, 
+    d: int = None, 
+    dot: float = None, 
+    angle_deg: float = None,
+    device):
+    """
+    Create N embedding vectors of dimension d that all have equal pairwise dot products.
+
+    Args:
+        N (int): number of vectors
+        d (int, optional): dimensionality (default N)
+        dot (float, optional): desired pairwise dot product between distinct vectors
+        angle_deg (float, optional): alternatively specify angle in degrees
+
+    Returns:
+        X (torch.Tensor): [N, d] embedding vectors
+        G (torch.Tensor): [N, N] Gram matrix (X @ X.T)
+    """
+    if (dot is None) == (angle_deg is None):
+        raise ValueError("Specify exactly one of `dot` or `angle_deg`")
+
+    if angle_deg is not None:
+        dot = math.cos(math.radians(angle_deg))
+
+    if d is None:
+        d = N
+
+    # For G to be positive semidefinite, dot >= -1/(N-1)
+    if dot < -1 / (N - 1):
+        raise ValueError(f"Invalid dot={dot:.3f}: too negative for N={N} (must be ≥ {-1/(N-1):.3f})")
+
+    # Construct Gram matrix
+    I = torch.eye(N)
+    ones = torch.ones((N, N))
+    G = (1 - dot) * I + dot * ones
+
+    # Eigen-decompose G = V Λ Vᵀ and construct X = V √Λ
+    eigvals, eigvecs = torch.linalg.eigh(G)
+    eigvals_clamped = torch.clamp(eigvals, min=0.0)
+    X_full = eigvecs @ torch.diag(torch.sqrt(eigvals_clamped))
+
+    # Truncate or pad to desired dimensionality
+    if d < N:
+        X = X_full[:, :d]
+    elif d > N:
+        pad = torch.zeros((N, d - N))
+        X = torch.cat([X_full, pad], dim=1)
+    else:
+        X = X_full
+
+    return G
+
 
 class LearningWithAdaptiveLabels(nn.Module):
     """ BCE with optional one-hot from dense targets, label smoothing, thresholding
@@ -235,7 +289,7 @@ class LearningWithAdaptiveLabels(nn.Module):
             exp_centroid_decay_factor: float = 0.0,
             exp_stationary_step_decay_factor: float = 0.0,
             averaging_centroids: bool = False,
-            sigma: float = 0.01,
+            sigma: Optional[float] = None,
             # BCE args
             # smoothing=0.1,
             # target_threshold: Optional[float] = None,
@@ -256,9 +310,8 @@ class LearningWithAdaptiveLabels(nn.Module):
                 self.learnt_y = generate_random_orthogonal_vectors(num_classes, latent_dim, device) 
             case 'perturbed':
                 self.learnt_y = torch.eye(num_classes, latent_dim, device=device)
-                self.learnt_y = perturb_embeddings_gaussian(self.learnt_y, sigma)
-                print('pairwise cosine sim of learnt_y x learnt_y after perturbation.')
-                print(pairwise_cosine_similarity(self.learnt_y, self.learnt_y))
+            case '':
+
             case 'learnt':
                 self.learnt_y = LAST_Z_OF_LABEL.to(device)
             case 'vit':
@@ -267,6 +320,10 @@ class LearningWithAdaptiveLabels(nn.Module):
                 self.learnt_y = regular_simplex(n=num_classes, d=latent_dim).to(device)
             case _:
                 self.learnt_y = torch.eye(num_classes, latent_dim, device=device)
+        if sigma is not None and sigma > 0:
+            self.learnt_y = perturb_embeddings_gaussian(self.learnt_y, sigma)
+            print('pairwise cosine sim of learnt_y x learnt_y after perturbation.')
+            print(pairwise_cosine_similarity(self.learnt_y, self.learnt_y))
         print(self.learnt_y)
         self.decay_factor = decay_factor
         self.structure_loss_weight = structure_loss_weight
