@@ -218,7 +218,7 @@ def make_equally_spaced_embeddings(
     d: int = None, 
     dot: float = None, 
     angle_deg: float = None,
-    device):
+    device = None):
     """
     Create N embedding vectors of dimension d that all have equal pairwise dot products.
 
@@ -264,7 +264,7 @@ def make_equally_spaced_embeddings(
     else:
         X = X_full
 
-    return G
+    return X.to(device)
 
 
 class LearningWithAdaptiveLabels(nn.Module):
@@ -290,6 +290,8 @@ class LearningWithAdaptiveLabels(nn.Module):
             exp_stationary_step_decay_factor: float = 0.0,
             averaging_centroids: bool = False,
             sigma: Optional[float] = None,
+            dot: Optional[float] = None,
+            ang_deg: Optional[float] = None,
             # BCE args
             # smoothing=0.1,
             # target_threshold: Optional[float] = None,
@@ -310,8 +312,10 @@ class LearningWithAdaptiveLabels(nn.Module):
                 self.learnt_y = generate_random_orthogonal_vectors(num_classes, latent_dim, device) 
             case 'perturbed':
                 self.learnt_y = torch.eye(num_classes, latent_dim, device=device)
-            case '':
-
+            case 'angled':
+                self.learnt_y = make_equally_spaced_embeddings(
+                    num_classes, latent_dim, dot, ang_deg, device
+                )
             case 'learnt':
                 self.learnt_y = LAST_Z_OF_LABEL.to(device)
             case 'vit':
@@ -408,8 +412,10 @@ class LearningWithAdaptiveLabels(nn.Module):
             if self.verbose: 
                 print('learnt_y (near the end of training)')
                 print(self.learnt_y)
+            pwise = pairwise_cosine_similarity(self.learnt_y, self.learnt_y)
             print('pairwise cosine sim of learnt_y x learnt_y')
-            print(pairwise_cosine_similarity(self.learnt_y, self.learnt_y))
+            print(pwise)
+            print(pwise.mean())
             print("last z's of each label (to be used as centroids for next run)")
             print(self.last_z_of_label)
             raise KeyboardInterrupt()
