@@ -266,6 +266,33 @@ def make_equally_spaced_embeddings(
 
     return X.to(device)
 
+def make_rotated_onehot(N=10, rotate_pair=(0, 1), angle_deg=10.0, device = None):
+    """
+    Create N one-hot embeddings, except rotate one of them by a given angle
+    relative to another.
+
+    Args:
+        N (int): number of embeddings / dimensions
+        rotate_pair (tuple[int, int]): (anchor_idx, rotated_idx)
+        angle_deg (float): rotation angle in degrees
+
+    Returns:
+        torch.Tensor: [N, N] embeddings (each row is a vector)
+    """
+    angle = math.radians(angle_deg)
+    X = torch.eye(N)  # start with one-hot vectors
+
+    i, j = rotate_pair
+    e_i = X[i].clone()
+    e_j = X[j].clone()
+
+    # Rotate e_j toward e_i by the desired angle
+    X[j] = math.cos(angle) * e_j + math.sin(angle) * e_i
+
+    # Renormalize to keep unit length (just in case)
+    X = X / X.norm(dim=1, keepdim=True)
+    return X.to(device)
+
 
 class LearningWithAdaptiveLabels(nn.Module):
     """ BCE with optional one-hot from dense targets, label smoothing, thresholding
@@ -315,6 +342,10 @@ class LearningWithAdaptiveLabels(nn.Module):
             case 'angled':
                 self.learnt_y = make_equally_spaced_embeddings(
                     num_classes, latent_dim, dot, ang_deg, device
+                )
+            case 'single_angled':
+                self.learnt_y = make_rotated_onehot(
+                    num_classes, rotate_pair=(0, 1), angle_deg=ang_deg, device=device
                 )
             case 'learnt':
                 self.learnt_y = LAST_Z_OF_LABEL.to(device)
