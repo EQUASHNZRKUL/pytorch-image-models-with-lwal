@@ -266,7 +266,7 @@ def make_equally_spaced_embeddings(
 
     return X.to(device)
 
-def make_rotated_onehot(N=10, rotate_pair=(0, 1), angle_deg=10.0, device = None):
+def make_rotated_onehot(N=10, rotate_pair=(1, 5), angle_deg=10.0, device = None):
     """
     Create N one-hot embeddings, except rotate one of them by a given angle
     relative to another.
