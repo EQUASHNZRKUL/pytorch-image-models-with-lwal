@@ -513,15 +513,15 @@ class LearningWithAdaptiveLabels(nn.Module):
         acc1 = (pred_y == true_y).float().mean() * 100.
 
         # ---- Compute per-class accuracy ----
-        num_classes = target.shape[1]  # since target is one-hot
-        true_class_indices = true_y.argmax(dim=1)
-        pred_class_indices = pred_y.argmax(dim=1)
-
+        num_classes = self.num_classes
         per_class_acc = torch.zeros(num_classes, device=z.device)
+
         for c in range(num_classes):
-            mask = true_class_indices == c
-            if mask.sum() > 0:
-                per_class_acc[c] = (pred_class_indices[mask] == c).float().mean() * 100.
+            mask = (true_y == c)
+            if mask.any():
+                per_class_acc[c] = (pred_y[mask] == c).float().mean() * 100.
+            else:
+                per_class_acc[c] = float('nan')  # no samples for that class in this batch
 
         return acc1, per_class_acc
 
