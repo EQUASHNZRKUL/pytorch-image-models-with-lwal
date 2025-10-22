@@ -1295,7 +1295,7 @@ def validate(
                     loss = loss_fn(output, target)
             # acc1, acc5 = utils.accuracy(output, target, topk=(1, 5))
             if args.lwal_loss:
-                acc1, structure_loss, batch_correct, batch_total = loss_fn.accuracy_with_per_class(output, target, learnt_y)
+                acc1, acc5, batch_correct, batch_total = loss_fn.accuracy_with_per_class(output, target, learnt_y)
 
                 total_correct += batch_correct
                 total_seen += batch_total
