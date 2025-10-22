@@ -510,20 +510,25 @@ class LearningWithAdaptiveLabels(nn.Module):
 
     def acc_helper(self, z, target, learnt_y):
         pred_y, true_y = self.cross_entropy_nn_pred(z, target, learnt_y)
+
+        # Normalize to class indices
+        if true_y.ndim > 1:
+            true_y = true_y.argmax(dim=1)
+        if pred_y.ndim > 1:
+            pred_y = pred_y.argmax(dim=1)
+
         acc1 = (pred_y == true_y).float().mean() * 100.
 
-        # ---- Compute per-class accuracy ----
         num_classes = self.num_classes
-        per_class_acc = torch.zeros(num_classes, device=z.device)
+        per_class_correct = torch.zeros(num_classes, device=z.device)
+        per_class_total = torch.zeros(num_classes, device=z.device)
 
         for c in range(num_classes):
             mask = (true_y == c)
-            if mask.any():
-                per_class_acc[c] = (pred_y[mask] == c).float().mean() * 100.
-            else:
-                per_class_acc[c] = float('nan')  # no samples for that class in this batch
+            per_class_total[c] = mask.sum()
+            per_class_correct[c] = (pred_y[mask] == c).sum()
 
-        return acc1, per_class_acc
+        return acc1, per_class_correct, per_class_total
 
     def accuracy(self, output, target, learnt_y, topk=(1,)):
         """Computes the 1-accuracy for lwal loss."""
@@ -535,9 +540,8 @@ class LearningWithAdaptiveLabels(nn.Module):
         return acc1, structure_loss
 
     def accuracy_with_per_class(self, output, target, learnt_y, topk=(1,)):
-        """Computes the 1-accuracy for lwal loss."""
         z = output.clone().to(torch.float32)
         one_hot_target = torch.nn.functional.one_hot(target, num_classes=self.num_classes)
         structure_loss = cos_repel_loss_z_optimized(z, one_hot_target)
-        acc1, per_class_acc = self.acc_helper(z, one_hot_target, learnt_y)
-        return acc1, structure_loss, per_class_acc
+        acc1, per_class_correct, per_class_total = self.acc_helper(z, one_hot_target, learnt_y)
+        return acc1, structure_loss, per_class_correct, per_class_total

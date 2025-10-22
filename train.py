@@ -1259,6 +1259,12 @@ def validate(
 
     end = time.time()
     last_idx = len(loader) - 1
+
+    if args.lwal_loss:
+        num_classes = loss_fn.num_classes
+        total_correct = torch.zeros(num_classes, device=device)
+        total_seen = torch.zeros(num_classes, device=device)
+
     with torch.no_grad():
         for batch_idx, (input, target) in enumerate(loader):
             last_batch = batch_idx == last_idx
@@ -1289,10 +1295,14 @@ def validate(
                     loss = loss_fn(output, target)
             # acc1, acc5 = utils.accuracy(output, target, topk=(1, 5))
             if args.lwal_loss:
-                acc1, acc5, per_class_acc = loss_fn.accuracy_with_per_class(output, target, learnt_y)
+                acc1, structure_loss, batch_correct, batch_total = loss_fn.accuracy_with_per_class(output, target, learnt_y)
+
+                total_correct += batch_correct
+                total_seen += batch_total
             else:
                 acc1, acc5 = utils.accuracy(output, target, topk=(1, 5))
-                per_class_acc = None
+                total_correct = None
+                total_seen = None
 
             if args.distributed:
                 reduced_loss = utils.reduce_tensor(loss.data, args.world_size)
@@ -1319,9 +1329,13 @@ def validate(
                     f'Acc@1: {top1_m.val:>7.3f} ({top1_m.avg:>7.3f})  '
                     # f'Acc@5: {top5_m.val:>7.3f} ({top5_m.avg:>7.3f})'
                 )
-            if per_class_acc is not None:
-                per_class_str = "  ".join([f"Class {i}: {a:.1f}%" for i, a in enumerate(per_class_acc)])
-                _logger.info(f"Per-class acc: {per_class_str}")
+        if args.lwal_loss:
+            per_class_acc = (total_correct / total_seen.clamp_min(1)) * 100.0
+            _logger.info("==== Per-Class Validation Accuracy ====")
+            for i, acc in enumerate(per_class_acc):
+                if total_seen[i] > 0:
+                    _logger.info(f"Class {i}: {acc:.2f}% ({int(total_seen[i])} samples)")
+
 
     metrics = OrderedDict([('loss', losses_m.avg), ('top1', top1_m.avg), ('top5', top5_m.avg)])
 
