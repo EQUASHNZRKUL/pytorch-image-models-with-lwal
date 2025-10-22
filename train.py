@@ -1289,9 +1289,10 @@ def validate(
                     loss = loss_fn(output, target)
             # acc1, acc5 = utils.accuracy(output, target, topk=(1, 5))
             if args.lwal_loss:
-                acc1, acc5 = loss_fn.accuracy(output, target, learnt_y)
+                acc1, acc5, per_class_acc = loss_fn.accuracy_with_per_class(output, target, learnt_y)
             else:
                 acc1, acc5 = utils.accuracy(output, target, topk=(1, 5))
+                per_class_acc = None
 
             if args.distributed:
                 reduced_loss = utils.reduce_tensor(loss.data, args.world_size)
@@ -1318,6 +1319,9 @@ def validate(
                     f'Acc@1: {top1_m.val:>7.3f} ({top1_m.avg:>7.3f})  '
                     # f'Acc@5: {top5_m.val:>7.3f} ({top5_m.avg:>7.3f})'
                 )
+            if per_class_acc is not None:
+                per_class_str = "  ".join([f"Class {i}: {a:.1f}%" for i, a in enumerate(per_class_acc)])
+                _logger.info(f"Per-class acc: {per_class_str}")
 
     metrics = OrderedDict([('loss', losses_m.avg), ('top1', top1_m.avg), ('top5', top5_m.avg)])
 
