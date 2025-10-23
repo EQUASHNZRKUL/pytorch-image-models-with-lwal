@@ -319,6 +319,7 @@ class LearningWithAdaptiveLabels(nn.Module):
             sigma: Optional[float] = None,
             dot: Optional[float] = None,
             ang_deg: Optional[float] = None,
+            rotate_pair: Tuple[int, int] = (0, 1)
             # BCE args
             # smoothing=0.1,
             # target_threshold: Optional[float] = None,
@@ -345,7 +346,7 @@ class LearningWithAdaptiveLabels(nn.Module):
                 )
             case 'single_angled':
                 self.learnt_y = make_rotated_onehot(
-                    num_classes, rotate_pair=(0, 1), angle_deg=ang_deg, device=device
+                    num_classes, rotate_pair=rotate_pair, angle_deg=ang_deg, device=device
                 )
             case 'learnt':
                 self.learnt_y = LAST_Z_OF_LABEL.to(device)

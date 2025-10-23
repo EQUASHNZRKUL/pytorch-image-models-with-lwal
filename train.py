@@ -334,6 +334,8 @@ group.add_argument('--dot', type=float, default=None,
                    help="dot product to get when generating angled init.")
 group.add_argument('--ang_deg', type=float, default=None,
                    help="angle to get when generating angled init in deg.")
+group.add_argument('--rotate-pair', type=Tuple[int, int], default=None,
+                   help="pairs to rotate.")
 group.add_argument('--reprob', type=float, default=0., metavar='PCT',
                    help='Random erase prob (default: 0.)')
 group.add_argument('--remode', type=str, default='pixel',
@@ -834,6 +836,7 @@ def main():
             sigma=args.perturbation_sigma,
             dot=args.dot,
             ang_deg=args.ang_deg,
+            rotate_pair=args.rotate_pair
             # BCE params
             # target_threshold=args.bce_target_thresh,
             # sum_classes=args.bce_sum,
