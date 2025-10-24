@@ -2,7 +2,7 @@
 
 Hacked together by / Copyright 2021 Ross Wightman
 """
-from typing import Optional, Union
+from typing import Optional, Union, Tuple
 
 import math
 import numpy as np

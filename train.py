@@ -334,7 +334,7 @@ group.add_argument('--dot', type=float, default=None,
                    help="dot product to get when generating angled init.")
 group.add_argument('--ang_deg', type=float, default=None,
                    help="angle to get when generating angled init in deg.")
-group.add_argument('--rotate-pair', type=Tuple[int, int], default=None,
+group.add_argument('--rotate-pair', type=tuple[int, int], default=None,
                    help="pairs to rotate.")
 group.add_argument('--reprob', type=float, default=0., metavar='PCT',
                    help='Random erase prob (default: 0.)')
