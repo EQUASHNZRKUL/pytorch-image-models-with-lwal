@@ -839,8 +839,8 @@ def main():
             sigma=args.perturbation_sigma,
             dot=args.dot,
             ang_deg=args.ang_deg,
-            rotate_pair=args.rotate_pair
-            angle_pair=args.angle_pair
+            rotate_pair=args.rotate_pair,
+            angle_pair=args.angle_pair,
             # BCE params
             # target_threshold=args.bce_target_thresh,
             # sum_classes=args.bce_sum,
