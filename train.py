@@ -336,8 +336,8 @@ group.add_argument('--ang_deg', type=float, default=None,
                    help="angle to get when generating angled init in deg.")
 group.add_argument('--rotate-pair', type=int, nargs=2, default=(0, 1),
                    help="pairs to rotate.")
-group.add_argument('--angle-pair', type=int, nargs=2, default(5, 20),
-                   help="what angle group pairs are in ")
+group.add_argument('--angle-pair', type=int, nargs=2, default = (5, 20),
+                   help="what angle to put the groups from each other.")
 group.add_argument('--reprob', type=float, default=0., metavar='PCT',
                    help='Random erase prob (default: 0.)')
 group.add_argument('--remode', type=str, default='pixel',
