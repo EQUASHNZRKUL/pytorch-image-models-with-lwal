@@ -605,7 +605,7 @@ class LearningWithAdaptiveLabels(nn.Module):
     def accuracy_with_confusion_matrix(self, output, target, learnt_y, confmat_metric=None):
         # Get predictions and labels once
         one_hot_target = torch.nn.functional.one_hot(target, num_classes=self.num_classes)
-        pred_y, true_y = self.cross_entropy_nn_pred(output, target, learnt_y)
+        pred_y, true_y = self.cross_entropy_nn_pred(output, one_hot_target, learnt_y)
 
         if true_y.ndim > 1:
             true_y = true_y.argmax(dim=1)
