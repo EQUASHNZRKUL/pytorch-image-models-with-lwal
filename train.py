@@ -32,6 +32,7 @@ import torchvision.utils
 import torchviz
 import yaml
 from torch.nn.parallel import DistributedDataParallel as NativeDDP
+from torchmetrics import ConfusionMatrix
 
 from timm import utils
 from timm.data import create_dataset, create_loader, resolve_data_config, Mixup, FastCollateMixup, AugMixDataset
@@ -1257,6 +1258,8 @@ def validate(
     # input_losses_m = utils.AverageMeter()
     top1_m = utils.AverageMeter()
     top5_m = utils.AverageMeter()
+    num_classes = loss_fn.num_classes
+    confmat_metric = ConfusionMatrix(task="multiclass", num_classes=num_classes).to(device)
 
     if training:
         model.train()
@@ -1301,14 +1304,9 @@ def validate(
                     loss = loss_fn(output, target)
             # acc1, acc5 = utils.accuracy(output, target, topk=(1, 5))
             if args.lwal_loss:
-                acc1, acc5, batch_correct, batch_total = loss_fn.accuracy_with_per_class(output, target, learnt_y)
-
-                total_correct += batch_correct
-                total_seen += batch_total
+                acc1, acc5 = loss_fn.accuracy_with_confusion_matrix(output, target, learnt_y, confmat_metric=confmat_metric)
             else:
                 acc1, acc5 = utils.accuracy(output, target, topk=(1, 5))
-                total_correct = None
-                total_seen = None
 
             if args.distributed:
                 reduced_loss = utils.reduce_tensor(loss.data, args.world_size)
@@ -1336,11 +1334,16 @@ def validate(
                     # f'Acc@5: {top5_m.val:>7.3f} ({top5_m.avg:>7.3f})'
                 )
         if args.lwal_loss:
-            per_class_acc = (total_correct / total_seen.clamp_min(1)) * 100.0
-            _logger.info("==== Per-Class Validation Accuracy ====")
-            for i, acc in enumerate(per_class_acc):
-                if total_seen[i] > 0:
-                    _logger.info(f"Class {i}: {acc:.2f}% ({int(total_seen[i])} samples)")
+            confusion = confmat_metric.compute().float()
+            confusion_normalized = confusion / confusion.sum(dim=1, keepdim=True).clamp_min(1)
+            confusion_normalized *= 100.0
+
+            _logger.info("==== Normalized Confusion Matrix (% per true class) ====")
+            for i in range(num_classes):
+                row_values = " ".join([f"{confusion_normalized[i, j]:5.1f}" for j in range(num_classes)])
+                _logger.info(f"True {i:02d}: {row_values}")
+
+            confmat_metric.reset()
 
 
     metrics = OrderedDict([('loss', losses_m.avg), ('top1', top1_m.avg), ('top5', top5_m.avg)])
