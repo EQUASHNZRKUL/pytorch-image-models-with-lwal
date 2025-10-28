@@ -294,7 +294,7 @@ def make_rotated_onehot(N=10, rotate_pair=(1, 5), angle_deg=10.0, device = None)
     return X.to(device)
 
 
-def make_two_angle_embeddings(N=10, dim=10, n1=5, angle_pair = (5, 20), seed=None):
+def make_two_angle_embeddings(N=10, dim=10, n1=5, angle_pair = (5, 20), device=None, seed=None):
     """
     Create embeddings such that:
       - first n1 vectors are 'angle1_deg' away from e_0
