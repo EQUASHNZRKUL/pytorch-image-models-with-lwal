@@ -294,6 +294,52 @@ def make_rotated_onehot(N=10, rotate_pair=(1, 5), angle_deg=10.0, device = None)
     return X.to(device)
 
 
+def make_two_angle_embeddings(N=10, dim=10, n1=5, angle_pair = (5, 20), seed=None):
+    """
+    Create embeddings such that:
+      - first n1 vectors are 'angle1_deg' away from e_0
+      - remaining N-n1 vectors are 'angle2_deg' away from e_{dim-1}
+
+    Args:
+        N (int): total number of embeddings
+        dim (int): embedding dimensionality
+        n1 (int): number of vectors near e_0
+        angle1_deg (float): angle for first group
+        angle2_deg (float): angle for second group
+        seed (int, optional): RNG seed for reproducibility
+
+    Returns:
+        torch.Tensor: [N, dim] embeddings (rows)
+    """
+    angle1_deg, angle2_deg = angle_pair
+    if seed is not None:
+        torch.manual_seed(seed)
+
+    X = torch.zeros((N, dim))
+    e0 = torch.zeros(dim); e0[0] = 1.0
+    e9 = torch.zeros(dim); e9[-1] = 1.0
+
+    # group 1: near e0
+    for i in range(n1):
+        v = torch.randn(dim)
+        v[0] = 0.0  # make sure it's orthogonal to e0
+        v = v / v.norm()
+        angle = math.radians(angle1_deg)
+        X[i] = math.cos(angle) * e0 + math.sin(angle) * v
+
+    # group 2: near e9
+    for i in range(n1, N):
+        v = torch.randn(dim)
+        v[-1] = 0.0
+        v = v / v.norm()
+        angle = math.radians(angle2_deg)
+        X[i] = math.cos(angle) * e9 + math.sin(angle) * v
+
+    # normalize all to unit length (for safety)
+    X = X / X.norm(dim=1, keepdim=True)
+    return X
+
+
 class LearningWithAdaptiveLabels(nn.Module):
     """ BCE with optional one-hot from dense targets, label smoothing, thresholding
     NOTE for experiments comparing CE to BCE /w label smoothing, may remove
@@ -319,7 +365,8 @@ class LearningWithAdaptiveLabels(nn.Module):
             sigma: Optional[float] = None,
             dot: Optional[float] = None,
             ang_deg: Optional[float] = None,
-            rotate_pair: Tuple[int, int] = (0, 1)
+            rotate_pair: Tuple[int, int] = (0, 1),
+            angle_pair: Tuple[int, int] = (5, 20)
             # BCE args
             # smoothing=0.1,
             # target_threshold: Optional[float] = None,
@@ -347,6 +394,13 @@ class LearningWithAdaptiveLabels(nn.Module):
             case 'single_angled':
                 self.learnt_y = make_rotated_onehot(
                     num_classes, rotate_pair=rotate_pair, angle_deg=ang_deg, device=device
+                )
+            case 'angled_groups':
+                self.learnt_y = make_two_angle_embeddings(
+                    N=num_classes,
+                    dim=latent_dim,
+                    n1=5,
+                    angle_pair=angle_pair
                 )
             case 'learnt':
                 self.learnt_y = LAST_Z_OF_LABEL.to(device)
