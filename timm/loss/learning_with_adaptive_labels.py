@@ -337,7 +337,7 @@ def make_two_angle_embeddings(N=10, dim=10, n1=5, angle_pair = (5, 20), seed=Non
 
     # normalize all to unit length (for safety)
     X = X / X.norm(dim=1, keepdim=True)
-    return X
+    return X.to(device)
 
 
 class LearningWithAdaptiveLabels(nn.Module):
@@ -400,7 +400,8 @@ class LearningWithAdaptiveLabels(nn.Module):
                     N=num_classes,
                     dim=latent_dim,
                     n1=5,
-                    angle_pair=angle_pair
+                    angle_pair=angle_pair,
+                    device=device
                 )
             case 'learnt':
                 self.learnt_y = LAST_Z_OF_LABEL.to(device)
@@ -600,3 +601,35 @@ class LearningWithAdaptiveLabels(nn.Module):
         structure_loss = cos_repel_loss_z_optimized(z, one_hot_target)
         acc1, per_class_correct, per_class_total = self.acc_helper(z, one_hot_target, learnt_y)
         return acc1, structure_loss, per_class_correct, per_class_total
+    
+    def accuracy_with_confusion_matrix(self, output, target, learnt_y, confmat_metric=None):
+        # Get predictions and labels once
+        pred_y, true_y = self.cross_entropy_nn_pred(output, target, learnt_y)
+
+        if true_y.ndim > 1:
+            true_y = true_y.argmax(dim=1)
+        if pred_y.ndim > 1:
+            pred_y = pred_y.argmax(dim=1)
+
+        # Compute accuracy
+        acc1 = (pred_y == true_y).float().mean() * 100.0
+
+        # Per-class counts
+        num_classes = self.num_classes
+        per_class_correct = torch.zeros(num_classes, device=output.device)
+        per_class_total = torch.zeros(num_classes, device=output.device)
+        for c in range(num_classes):
+            mask = (true_y == c)
+            per_class_total[c] = mask.sum()
+            per_class_correct[c] = (pred_y[mask] == c).sum()
+
+        # Update confusion matrix if provided
+        if confmat_metric is not None:
+            confmat_metric.update(pred_y, true_y)
+
+        # Optional structure loss, if you’re using it
+        z = output.to(torch.float32)
+        one_hot_target = torch.nn.functional.one_hot(target, num_classes=num_classes)
+        structure_loss = cos_repel_loss_z_optimized(z, one_hot_target)
+
+        return acc1, structure_loss
