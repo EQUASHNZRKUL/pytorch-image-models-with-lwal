@@ -294,7 +294,7 @@ def make_rotated_onehot(N=10, rotate_pair=(1, 5), angle_deg=10.0, device = None)
     return X.to(device)
 
 
-def make_two_angle_embeddings(N=10, dim=10, n1=5, angle_pair = (5, 20), device=None, seed=None):
+def make_two_angle_embeddings(N=10, dim=10, g1=[0, 1, 2, 3, 4], g2=[5, 6, 7, 8, 9] angle_pair = (5, 20), device=None, seed=None):
     """
     Create embeddings such that:
       - first n1 vectors are 'angle1_deg' away from e_0
@@ -320,7 +320,7 @@ def make_two_angle_embeddings(N=10, dim=10, n1=5, angle_pair = (5, 20), device=N
     e9 = torch.zeros(dim); e9[-1] = 1.0
 
     # group 1: near e0
-    for i in range(n1):
+    for i in g1:
         v = torch.randn(dim)
         v[0] = 0.0  # make sure it's orthogonal to e0
         v = v / v.norm()
@@ -328,7 +328,7 @@ def make_two_angle_embeddings(N=10, dim=10, n1=5, angle_pair = (5, 20), device=N
         X[i] = math.cos(angle) * e0 + math.sin(angle) * v
 
     # group 2: near e9
-    for i in range(n1, N):
+    for i in g2:
         v = torch.randn(dim)
         v[-1] = 0.0
         v = v / v.norm()
@@ -366,7 +366,8 @@ class LearningWithAdaptiveLabels(nn.Module):
             dot: Optional[float] = None,
             ang_deg: Optional[float] = None,
             rotate_pair: Tuple[int, int] = (0, 1),
-            angle_pair: Tuple[int, int] = (5, 20)
+            angle_pair: Tuple[int, int] = (5, 20),
+            groups: Tuple[list[int], list[int]] = ([0, 1, 2, 3, 4], [5, 6, 7, 8, 9])
             # BCE args
             # smoothing=0.1,
             # target_threshold: Optional[float] = None,
@@ -399,7 +400,8 @@ class LearningWithAdaptiveLabels(nn.Module):
                 self.learnt_y = make_two_angle_embeddings(
                     N=num_classes,
                     dim=latent_dim,
-                    n1=5,
+                    g1=[0, 1, 2, 3, 4],
+                    g2=[5, 6, 7, 8, 9],
                     angle_pair=angle_pair,
                     device=device
                 )

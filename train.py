@@ -82,7 +82,8 @@ config_parser = parser = argparse.ArgumentParser(description='Training Config', 
 parser.add_argument('-c', '--config', default='', type=str, metavar='FILE',
                     help='YAML config file specifying default arguments')
 
-
+def parse_tuple_of_lists(arg_list):
+    return tuple([list(map(int, item.split(','))) for item in arg_list])
 parser = argparse.ArgumentParser(description='PyTorch ImageNet Training')
 
 # Dataset parameters
@@ -339,6 +340,12 @@ group.add_argument('--rotate-pair', type=int, nargs=2, default=(0, 1),
                    help="pairs to rotate.")
 group.add_argument('--angle-pair', type=int, nargs=2, default = (5, 20),
                    help="what angle to put the groups from each other.")
+parser.add_argument(
+    "--angled-group-indices",
+    nargs=2,
+    type=str,
+    help="Two comma-separated lists, e.g. --rotate-pair 1,2,3 4,5"
+)
 group.add_argument('--reprob', type=float, default=0., metavar='PCT',
                    help='Random erase prob (default: 0.)')
 group.add_argument('--remode', type=str, default='pixel',
@@ -841,6 +848,7 @@ def main():
             ang_deg=args.ang_deg,
             rotate_pair=args.rotate_pair,
             angle_pair=args.angle_pair,
+            groups=parse_tuple_of_lists(args.angled_group_indices),
             # BCE params
             # target_threshold=args.bce_target_thresh,
             # sum_classes=args.bce_sum,
