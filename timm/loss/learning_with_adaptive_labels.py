@@ -294,7 +294,7 @@ def make_rotated_onehot(N=10, rotate_pair=(1, 5), angle_deg=10.0, device = None)
     return X.to(device)
 
 
-def make_two_angle_embeddings(N=10, dim=10, g1=[0, 1, 2, 3, 4], g2=[5, 6, 7, 8, 9] angle_pair = (5, 20), device=None, seed=None):
+def make_two_angle_embeddings(N=10, dim=10, g1=[0, 1, 2, 3, 4], g2=[5, 6, 7, 8, 9], angle_pair = (5, 20), device=None, seed=None):
     """
     Create embeddings such that:
       - first n1 vectors are 'angle1_deg' away from e_0
@@ -367,7 +367,7 @@ class LearningWithAdaptiveLabels(nn.Module):
             ang_deg: Optional[float] = None,
             rotate_pair: Tuple[int, int] = (0, 1),
             angle_pair: Tuple[int, int] = (5, 20),
-            groups: Tuple[list[int], list[int]] = ([0, 1, 2, 3, 4], [5, 6, 7, 8, 9])
+            groups: Tuple[list[int], list[int]] = ([0, 1, 2, 3, 4], [5, 6, 7, 8, 9]),
             # BCE args
             # smoothing=0.1,
             # target_threshold: Optional[float] = None,
