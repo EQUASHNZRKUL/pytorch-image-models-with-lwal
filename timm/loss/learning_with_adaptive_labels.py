@@ -400,8 +400,8 @@ class LearningWithAdaptiveLabels(nn.Module):
                 self.learnt_y = make_two_angle_embeddings(
                     N=num_classes,
                     dim=latent_dim,
-                    g1=[0, 1, 2, 3, 4],
-                    g2=[5, 6, 7, 8, 9],
+                    g1=groups[0],
+                    g2=groups[1],
                     angle_pair=angle_pair,
                     device=device
                 )
