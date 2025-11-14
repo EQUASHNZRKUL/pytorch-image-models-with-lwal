@@ -49,14 +49,11 @@ def pairwise_cosine_similarity(A, B):
     B = B.to(torch.float16)
     A_norm = torch.linalg.norm(A, dim=1, keepdim=True)
     B_norm = torch.linalg.norm(B, dim=1, keepdim=True)
-
     # # Avoid division by zero
     # A_norm = torch.where(A_norm == 0, torch.tensor(1e-12, device=A.device), A_norm)
     # B_norm = torch.where(B_norm == 0, torch.tensor(1e-12, device=B.device), B_norm)
-
     A_normalized = A / A_norm
     B_normalized = B / B_norm
-
     # Calculate cosine similarity
     # print('pairwise shapes', A_normalized.shape, B_normalized.T.shape)
     # print('pairwise devices', A.device, B.device)
