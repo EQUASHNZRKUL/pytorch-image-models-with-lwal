@@ -340,6 +340,8 @@ def make_two_angle_embeddings(N=10, dim=10, g1=[0, 1, 2, 3, 4], g2=[5, 6, 7, 8, 
     return X.to(device)
 
 
+
+
 class LearningWithAdaptiveLabels(nn.Module):
     """ BCE with optional one-hot from dense targets, label smoothing, thresholding
     NOTE for experiments comparing CE to BCE /w label smoothing, may remove
@@ -411,6 +413,8 @@ class LearningWithAdaptiveLabels(nn.Module):
                 self.learnt_y = VIT_Z_OF_LABEL.to(device)
             case 'simplex':
                 self.learnt_y = regular_simplex(n=num_classes, d=latent_dim).to(device)
+            case 'wordnet':
+                self.learnt_y = WORDNET_EMBEDDINGS.to(device)
             case _:
                 self.learnt_y = torch.eye(num_classes, latent_dim, device=device)
         if sigma is not None and sigma > 0:
