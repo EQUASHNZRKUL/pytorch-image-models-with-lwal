@@ -83,6 +83,8 @@ parser.add_argument('-c', '--config', default='', type=str, metavar='FILE',
                     help='YAML config file specifying default arguments')
 
 def parse_tuple_of_lists(arg_list):
+    if None:
+        return ([0, 1, 2, 3, 4], [5, 6, 7, 8, 9])
     return tuple([list(map(int, item.split(','))) for item in arg_list])
 parser = argparse.ArgumentParser(description='PyTorch ImageNet Training')
 
