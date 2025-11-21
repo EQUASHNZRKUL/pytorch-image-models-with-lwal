@@ -397,7 +397,7 @@ class LearningWithAdaptiveLabels(nn.Module):
                 )
             case 'angled_groups':
                 if groups is None:
-                    groups = list(range(0, num_classes // 2)), list(range(num_classes // 2), num_classes)
+                    groups = (list(range(0, num_classes // 2)), list(range(num_classes // 2, num_classes)))
                 self.learnt_y = make_two_angle_embeddings(
                     N=num_classes,
                     dim=latent_dim,
