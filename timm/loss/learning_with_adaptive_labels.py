@@ -366,7 +366,7 @@ class LearningWithAdaptiveLabels(nn.Module):
             ang_deg: Optional[float] = None,
             rotate_pair: Tuple[int, int] = (0, 1),
             angle_pair: Tuple[int, int] = (5, 20),
-            groups: Tuple[list[int], list[int]] = ([0, 1, 2, 3, 4], [5, 6, 7, 8, 9]),
+            groups: Tuple[list[int], list[int]] = None,
             # BCE args
             # smoothing=0.1,
             # target_threshold: Optional[float] = None,
@@ -396,6 +396,8 @@ class LearningWithAdaptiveLabels(nn.Module):
                     num_classes, rotate_pair=rotate_pair, angle_deg=ang_deg, device=device
                 )
             case 'angled_groups':
+                if groups is None:
+                    groups = list(range(0, num_classes // 2)), list(range(num_classes // 2), num_classes)
                 self.learnt_y = make_two_angle_embeddings(
                     N=num_classes,
                     dim=latent_dim,
