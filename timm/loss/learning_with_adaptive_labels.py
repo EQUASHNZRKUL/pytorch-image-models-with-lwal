@@ -414,6 +414,8 @@ class LearningWithAdaptiveLabels(nn.Module):
                 self.learnt_y = regular_simplex(n=num_classes, d=latent_dim).to(device)
             case 'wordnet':
                 self.learnt_y = WORDNET_EMBEDDINGS.to(device)
+            case 'wordnet20': 
+                self.learnt_y = WORDNET_EMBEDDINGS_CIFAR20.to(device)
             case _:
                 self.learnt_y = torch.eye(num_classes, latent_dim, device=device)
         if sigma is not None and sigma > 0:

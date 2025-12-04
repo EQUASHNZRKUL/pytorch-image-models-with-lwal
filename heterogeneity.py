@@ -37,12 +37,19 @@ def parse_python_matrix(text):
     arr = np.array(obj, dtype=float)
     if arr.ndim != 2:
         raise ValueError("Parsed object is not 2-dimensional.")
-    return 1-arr
+    return arr
 
 # --------------------------
 # Heterogeneity metrics
 # --------------------------
-def shannon_entropy(p):
+def cosine_heterogeneity_variance(cos_sims):
+    mean = cos_sims.mean()
+    var = ((cos_sims - mean) ** 2).mean()
+    return var
+
+
+def shannon_entropy(x):
+    p = (x+1.0)/2.0
     p = np.asarray(p, dtype=float)
     s = np.sum(p)
     if s == 0:
@@ -112,6 +119,7 @@ def main():
     gini_val     = gini_coefficient(offdiag)
     cv_val       = coefficient_of_variation(offdiag)
     simpson_val  = simpson_index(offdiag)
+    var          = cosine_heterogeneity_variance(offdiag)
 
     # ------------------------------
     # Output results
@@ -121,7 +129,8 @@ def main():
     print(f"Gini Coefficient:      {gini_val}")
     print(f"Coefficient Variation: {cv_val}")
     print(f"Simpson Index:         {simpson_val}")
-    print(f"{shannon_val}, {gini_val}, {cv_val}, {simpson_val}")
+    print(f"Variance:              {var}")
+    print(f"{shannon_val}, {gini_val}, {cv_val}, {simpson_val}, {var}")
 
 
 if __name__ == "__main__":
