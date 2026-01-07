@@ -86,22 +86,13 @@ def simpson_index(p):
     p = p / s
     return 1.0 - np.sum(p * p)
 
-
-# --------------------------
-# Main
-# --------------------------
-def main():
-    print("Paste your confusion matrix (Ctrl-D to finish):\n")
-    text = sys.stdin.read()
-
-    mat = parse_python_matrix(text)
-
+def calculate_metrics(mat):
     n = mat.shape[0]
     if mat.shape[0] != mat.shape[1]:
         raise ValueError("Matrix must be square for off-diagonal extraction.")
 
     print(f"\nParsed matrix: {n} x {n}")
-    print(mat)
+    # print(mat)
 
     # ------------------------------
     # Extract upper-triangle off-diagonal entries
@@ -110,7 +101,7 @@ def main():
     offdiag = mat[np.triu_indices(n, k=1)]
 
     print(f"\nNumber of off-diagonal values: {offdiag.size}")
-    print(offdiag)
+    # print(offdiag)
 
     # ------------------------------
     # Compute heterogeneity on off-diagonal 1-D vector
@@ -132,6 +123,17 @@ def main():
     print(f"Variance:              {var}")
     print(f"{shannon_val}, {gini_val}, {cv_val}, {simpson_val}, {var}")
 
+# --------------------------
+# Main
+# --------------------------
+def main():
+    print("Paste your confusion matrix (Ctrl-D to finish):\n")
+    text = sys.stdin.read()
+
+    mat = parse_python_matrix(text)
+
+    calculate_metrics(mat)
+    calculate_metrics(-mat)
 
 if __name__ == "__main__":
     main()

@@ -325,6 +325,7 @@ def _filter_torchvision_pretrained(state_dict):
 def _create_densenet(variant, growth_rate, block_config, pretrained, **kwargs):
     kwargs['growth_rate'] = growth_rate
     kwargs['block_config'] = block_config
+    kwargs.pop('drop_path_rate', None)
     return build_model_with_cfg(
         DenseNet,
         variant,
