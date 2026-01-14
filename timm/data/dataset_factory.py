@@ -81,7 +81,6 @@ _TORCH_BASIC_DS = dict(
     mnist=MNIST,
     kmnist=KMNIST,
     fashion_mnist=FashionMNIST,
-    food101=Food101,
 )
 _TRAIN_SYNONYM = dict(train=None, training=None)
 _EVAL_SYNONYM = dict(val=None, valid=None, validation=None, eval=None, evaluation=None)
