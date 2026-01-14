@@ -27,6 +27,11 @@ try:
     has_imagenet = True
 except ImportError:
     has_imagenet = False
+try:
+    from torchvision.datasets import Food101
+    has_food101 = True
+except ImportError:
+    has_food101 = False
 
 from .dataset import IterableImageDataset, ImageDataset
 
@@ -76,6 +81,7 @@ _TORCH_BASIC_DS = dict(
     mnist=MNIST,
     kmnist=KMNIST,
     fashion_mnist=FashionMNIST,
+    food101=Food101,
 )
 _TRAIN_SYNONYM = dict(train=None, training=None)
 _EVAL_SYNONYM = dict(val=None, valid=None, validation=None, eval=None, evaluation=None)
@@ -189,6 +195,11 @@ def create_dataset(
             if split in _EVAL_SYNONYM:
                 split = 'val'
             ds = ImageNet(split=split, **torch_kwargs)
+        elif name == 'food101':
+            assert has_food101, 'Please update to a newer PyTorch and torchvision for ImageNet dataset.'
+            if split in _EVAL_SYNONYM:
+                split = 'val'
+            ds = Food101(split=split, **torch_kwargs)
         elif name == 'image_folder' or name == 'folder':
             # in case torchvision ImageFolder is preferred over timm ImageDataset for some reason
             if search_split and os.path.isdir(root):
