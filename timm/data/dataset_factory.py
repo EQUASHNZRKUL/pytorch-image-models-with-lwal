@@ -197,7 +197,7 @@ def create_dataset(
         elif name == 'food101':
             assert has_food101, 'Please update to a newer PyTorch and torchvision for ImageNet dataset.'
             if split in _EVAL_SYNONYM:
-                split = 'val'
+                split = 'test'
             ds = Food101(split=split, **torch_kwargs)
         elif name == 'image_folder' or name == 'folder':
             # in case torchvision ImageFolder is preferred over timm ImageDataset for some reason
