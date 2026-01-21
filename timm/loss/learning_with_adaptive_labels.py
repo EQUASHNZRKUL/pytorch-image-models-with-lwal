@@ -420,6 +420,8 @@ class LearningWithAdaptiveLabels(nn.Module):
                 self.learnt_y = BERT_EMBEDDINGS_CIFAR10.to(device)
             case 'bert20':
                 self.learnt_y = BERT_EMBEDDINGS_CIFAR20.to(device)
+            case 'bert20':
+                self.learnt_y = BERT_EMBEDDINGS_CIFAR100.to(device)
             case 'glove10': 
                 self.learnt_y = GLOVE_EMBEDDINGS_CIFAR10.to(device)
             case 'glove20':
