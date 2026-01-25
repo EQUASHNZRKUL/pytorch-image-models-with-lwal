@@ -815,7 +815,7 @@ def main():
 
         # 3. Un-normalize and visualize
         def imshow(inp):
-            inp = inp.numpy().transpose((1, 2, 0))
+            inp = inp.cpu().numpy().transpose((1, 2, 0))
             # Undo standard ImageNet normalization for visualization
             mean = np.array([0.485, 0.456, 0.406])
             std = np.array([0.229, 0.224, 0.225])
