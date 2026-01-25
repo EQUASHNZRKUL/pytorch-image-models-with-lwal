@@ -711,6 +711,8 @@ def main():
         num_samples=args.train_num_samples,
     )
 
+    print('class to idx', dataset_train.class_to_idx)
+
     max_y = 0
     for x, y in dataset_train:
         if max_y < y: 
