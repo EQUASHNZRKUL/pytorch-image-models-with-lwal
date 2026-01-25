@@ -805,7 +805,7 @@ def main():
 
     for x, y in loader_train:
         # 1. Get a single batch from your dataloader
-        images, labels = next(iter(train_loader))
+        images, labels = x, y
 
         # 2. Print stats (Crucial step!)
         print(f"Input shape: {images.shape}")  # Should be [Batch_Size, 3, 224, 224]
