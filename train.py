@@ -44,6 +44,9 @@ from timm.optim import create_optimizer_v2, optimizer_kwargs
 from timm.scheduler import create_scheduler_v2, scheduler_kwargs
 from timm.utils import ApexScaler, NativeScaler
 
+import matplotlib.pyplot as plt
+import numpy as np
+
 try:
     from apex import amp
     from apex.parallel import DistributedDataParallel as ApexDDP
@@ -799,10 +802,30 @@ def main():
         use_multi_epochs_loader=args.use_multi_epochs_loader,
         worker_seeding=args.worker_seeding,
     )
+
     for x, y in loader_train:
-        # print('759: x', x.shape)
-        # print('760: target', y.shape)
-        # print('761: y', y)
+        # 1. Get a single batch from your dataloader
+        images, labels = next(iter(train_loader))
+
+        # 2. Print stats (Crucial step!)
+        print(f"Input shape: {images.shape}")  # Should be [Batch_Size, 3, 224, 224]
+        print(f"Value range: {images.min():.2f} to {images.max():.2f}") 
+        # If max is > 200, you forgot ToTensor() or valid normalization.
+        # If shape is 32x32, you have the CIFAR resize bug.
+
+        # 3. Un-normalize and visualize
+        def imshow(inp):
+            inp = inp.numpy().transpose((1, 2, 0))
+            # Undo standard ImageNet normalization for visualization
+            mean = np.array([0.485, 0.456, 0.406])
+            std = np.array([0.229, 0.224, 0.225])
+            inp = std * inp + mean
+            inp = np.clip(inp, 0, 1)
+            plt.imshow(inp)
+            plt.show()
+
+        # Show the first image
+        imshow(images[0])
         break
 
     loader_eval = None
