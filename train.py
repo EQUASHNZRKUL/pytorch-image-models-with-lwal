@@ -805,7 +805,7 @@ def main():
         worker_seeding=args.worker_seeding,
     )
 
-    for x, y in loader_eval:
+    for x, y in loader_train:
         # 1. Get a single batch from your dataloader
         images, labels = x, y
 
