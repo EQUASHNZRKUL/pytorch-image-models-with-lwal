@@ -772,6 +772,7 @@ def main():
     train_interpolation = args.train_interpolation
     if args.no_aug or not train_interpolation:
         train_interpolation = data_config['interpolation']
+    print(train_interpolation)
     loader_train = create_loader(
         dataset_train,
         input_size=data_config['input_size'],

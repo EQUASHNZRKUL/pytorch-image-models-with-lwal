@@ -425,7 +425,7 @@ class LearningWithAdaptiveLabels(nn.Module):
             case 'glove10': 
                 self.learnt_y = GLOVE_EMBEDDINGS_CIFAR10.to(device)
             case 'glove20':
-                self.learnt_y = GLOVE_EMBEDDINGS_CIFAR20.to(device)
+                self.learnt_y = GLOVE_EMBEDDINGS_CIFAR20_FINE_AVERAGED.to(device)
             case _:
                 self.learnt_y = torch.eye(num_classes, latent_dim, device=device)
         if sigma is not None and sigma > 0:
