@@ -805,7 +805,7 @@ def main():
         worker_seeding=args.worker_seeding,
     )
 
-    for x, y in loader_train:
+    for x, y in loader_eval:
         # 1. Get a single batch from your dataloader
         images, labels = x, y
 
@@ -851,6 +851,31 @@ def main():
             device=device,
             use_prefetcher=args.prefetcher,
         )
+
+    for x, y in loader_eval:
+        # 1. Get a single batch from your dataloader
+        images, labels = x, y
+
+        # 2. Print stats (Crucial step!)
+        print(f"Input shape: {images.shape}")  # Should be [Batch_Size, 3, 224, 224]
+        print(f"Value range: {images.min():.2f} to {images.max():.2f}") 
+        # If max is > 200, you forgot ToTensor() or valid normalization.
+        # If shape is 32x32, you have the CIFAR resize bug.
+
+        # 3. Un-normalize and visualize
+        def imshow(inp):
+            inp = inp.cpu().numpy().transpose((1, 2, 0))
+            # Undo standard ImageNet normalization for visualization
+            mean = np.array([0.485, 0.456, 0.406])
+            std = np.array([0.229, 0.224, 0.225])
+            inp = std * inp + mean
+            inp = np.clip(inp, 0, 1)
+            plt.imshow(inp)
+            plt.show()
+
+        # Show the first image
+        imshow(images[0])
+        break
 
     # setup loss function
     if args.lwal_loss:
