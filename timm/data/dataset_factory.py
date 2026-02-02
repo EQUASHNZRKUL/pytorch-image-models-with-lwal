@@ -205,7 +205,7 @@ def create_dataset(
             if split in _EVAL_SYNONYM:
                 split = 'test'
             ds = Food101(split=split, **torch_kwargs)
-        elfi name == 'flowers102':
+        elif name == 'flowers102':
             assert has_flowers102
             if split in _EVAL_SYNONYM:
                 split = 'test'
