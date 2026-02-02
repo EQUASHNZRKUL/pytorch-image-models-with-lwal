@@ -478,9 +478,9 @@ class LearningWithAdaptiveLabels(nn.Module):
 
         print(f"Target range: {target.min().item()} to {target.max().item()}")
         print(target.dtype)
-        print(f"Target shape: {targets.shape}")  # Should be [Batch]
-        print(f"Target dtype: {targets.dtype}")  # SHOULD BE torch.int64
-        print(f"Target example: {targets[:5]}")  # SHOULD BE [1, 45, 12, 0, 99]
+        print(f"Target shape: {target.shape}")  # Should be [Batch]
+        print(f"Target dtype: {target.dtype}")  # SHOULD BE torch.int64
+        print(f"Target example: {target[:5]}")  # SHOULD BE [1, 45, 12, 0, 99]
         if self.averaging_centroids:
             target_clone = target.detach()
             class_indices = torch.argmax(target_clone, dim=-1)
