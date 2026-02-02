@@ -476,6 +476,7 @@ class LearningWithAdaptiveLabels(nn.Module):
         structure_loss = 0
         stationary_steps_adj = self.stationary_steps
 
+        print(f"Target range: {target.min().item()} to {target.max().item()}")
         if self.averaging_centroids:
             target_clone = target.detach()
             class_indices = torch.argmax(target_clone, dim=-1)
