@@ -205,6 +205,11 @@ def create_dataset(
             if split in _EVAL_SYNONYM:
                 split = 'test'
             ds = Food101(split=split, **torch_kwargs)
+        elfi name == 'flowers102':
+            assert has_flowers102
+            if split in _EVAL_SYNONYM:
+                split = 'test'
+            ds = Flowers102(split=split, **torch_kwargs)
         elif name == 'image_folder' or name == 'folder':
             # in case torchvision ImageFolder is preferred over timm ImageDataset for some reason
             if search_split and os.path.isdir(root):
