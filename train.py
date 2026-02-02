@@ -711,7 +711,7 @@ def main():
         num_samples=args.train_num_samples,
     )
 
-    print('train: class to idx', dataset_train.class_to_idx)
+    # print('train: class to idx', dataset_train.class_to_idx)
 
     max_y = 0
     for x, y in dataset_train:
@@ -734,7 +734,7 @@ def main():
             num_samples=args.val_num_samples,
         )
 
-    print('val: class to idx', dataset_eval.class_to_idx)
+    # print('val: class to idx', dataset_eval.class_to_idx)
 
     # setup mixup / cutmix
     collate_fn = None
