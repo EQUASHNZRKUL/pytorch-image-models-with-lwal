@@ -1158,6 +1158,7 @@ def train_one_epoch(
     optimizer.zero_grad()
     update_sample_count = 0
     learnt_y = None
+    print(f"Target range: {target.min().item()} to {target.max().item()}")
     for batch_idx, (input, target) in enumerate(loader):
         # print('1013 input', input.shape)
         # print('1014 input', target.shape)
