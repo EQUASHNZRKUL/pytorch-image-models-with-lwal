@@ -478,7 +478,6 @@ class LearningWithAdaptiveLabels(nn.Module):
 
         print(f"Target range: {target.min().item()} to {target.max().item()}")
         print(target.dtype)
-        print(f"Image shape: {images.shape}")    # Should be [Batch, 3, 224, 224]
         print(f"Target shape: {targets.shape}")  # Should be [Batch]
         print(f"Target dtype: {targets.dtype}")  # SHOULD BE torch.int64
         print(f"Target example: {targets[:5]}")  # SHOULD BE [1, 45, 12, 0, 99]
