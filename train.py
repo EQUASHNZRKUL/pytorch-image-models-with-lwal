@@ -1188,7 +1188,8 @@ def train_one_epoch(
                     z = model(input)
                     print('1189 z', z.dtype)
                     print('1190 target', target.dtype)
-                    loss, learnt_y = loss_fn(z, target)
+                    target_one_hot = torch.nn.functional.one_hot(target, num_classes=args.num_classes).float()
+                    loss, learnt_y = loss_fn(z, target_one_hot)
                 else:
                     output = model(input)
                     loss = loss_fn(output, target)
