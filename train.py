@@ -1159,8 +1159,8 @@ def train_one_epoch(
     update_sample_count = 0
     learnt_y = None
     for batch_idx, (input, target) in enumerate(loader):
-        # print('1013 input', input.shape)
-        # print('1014 input', target.shape)
+        print('1013 input', input.dtype)
+        print('1014 target', target.dtype)
         last_batch = batch_idx == last_batch_idx
         need_update = last_batch or (batch_idx + 1) % accum_steps == 0
         update_idx = batch_idx // accum_steps
@@ -1171,6 +1171,8 @@ def train_one_epoch(
             input, target = input.to(device), target.to(device)
             if mixup_fn is not None:
                 input, target = mixup_fn(input, target)
+        print('1174 input', input.dtype)
+        print('1175 target', target.dtype)
         if args.channels_last:
             input = input.contiguous(memory_format=torch.channels_last)
 
@@ -1184,6 +1186,8 @@ def train_one_epoch(
                 if args.lwal_loss:
                     # z = model.forward_features(input)
                     z = model(input)
+                    print('1189 z', z.dtype)
+                    print('1190 target', target.dtype)
                     loss, learnt_y = loss_fn(z, target)
                 else:
                     output = model(input)
