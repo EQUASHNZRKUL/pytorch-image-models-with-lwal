@@ -1164,6 +1164,7 @@ def train_one_epoch(
         update_idx = batch_idx // accum_steps
         if batch_idx >= last_batch_idx_to_accum:
             accum_steps = last_accum_steps
+        if batch_idx % 20 == 0:
             with torch.no_grad():
                 # 1. Check the raw output range (Logits)
                 logit_min = output.min().item()
