@@ -1187,7 +1187,7 @@ def train_one_epoch(
                     if batch_idx % 20 == 0:
                         with torch.no_grad():
                             # 1. Check the raw output range (Logits)
-                            z = output
+                            output = z
                             logit_min = output.min().item()
                             logit_max = output.max().item()
                             
