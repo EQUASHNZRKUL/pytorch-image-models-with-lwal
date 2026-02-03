@@ -367,6 +367,7 @@ class LearningWithAdaptiveLabels(nn.Module):
             rotate_pair: Tuple[int, int] = (0, 1),
             angle_pair: Tuple[int, int] = (5, 20),
             groups: Tuple[list[int], list[int]] = None,
+            temperature: float = 1.0,
             # BCE args
             # smoothing=0.1,
             # target_threshold: Optional[float] = None,
@@ -448,12 +449,13 @@ class LearningWithAdaptiveLabels(nn.Module):
         self.averaging_centroids = averaging_centroids
         self.learnt_y_sums = torch.zeros(num_classes, latent_dim, device=device)
         self.learnt_y_counts = torch.zeros(num_classes, device=device)
+        self.temperature = temperature
     
     def get_learnt_y(self):
         return self.learnt_y
 
     def cross_entropy_pull_loss(self, enc_x, in_y, learnt_y):
-        enc_x_dist = self.pairwise_fn(enc_x, learnt_y)
+        enc_x_dist = self.pairwise_fn(enc_x, learnt_y) * self.temperature
         logits = F.log_softmax(-1.0 * enc_x_dist, dim=1)
         loss = torch.sum(-in_y * logits, dim=-1)
         return loss.mean()
@@ -538,31 +540,6 @@ class LearningWithAdaptiveLabels(nn.Module):
                 label = idx[i].item()
                 self.last_z_of_label[label] = z[i].detach()
         self.current_step += 1
-        # Experiment C
-        # if self.current_step == 3901:
-        #     print("Switching over centroids mode")
-        #     self.learnt_y = self.last_z_of_label
-        #     print("Centroids are: ", self.learnt_y)
-        # # Print data every epoch.
-        # if (self.current_step % 195) == 194 and self.verbose:
-        #     print('z', self.maximum_element, self.maximum_norm, z)
-        #     if self.pairwise_fn == pairwise_cosine_similarity:
-        #         cossim = pairwise_cosine_similarity(normalize_tensor_vectors_vmap(z), self.learnt_y)
-        #         print('cosine sim', 
-        #             get_max_element(-cossim),
-        #             get_max_element(calculate_vector_norms(-cossim)),
-        #             cossim)
-        #     else:
-        #         dists = pairwise_dist(z, self.learnt_y)
-        #         normed_dists = pairwise_dist(normalize_tensor_vectors_vmap(z), normalize_tensor_vectors_vmap(self.learnt_y))
-        #         print('dists', 
-        #               get_max_element(dists),
-        #               get_max_element(calculate_vector_norms(dists)),
-        #               dists)
-        #         print('normed_dists', 
-        #               get_max_element(normed_dists),
-        #               get_max_element(calculate_vector_norms(normed_dists)),
-        #               normed_dists)
         input_loss = self.cross_entropy_pull_loss(x, target, self.learnt_y)
         em_loss = self.structure_loss_weight * structure_loss + 1.0 * input_loss
 
