@@ -1187,21 +1187,21 @@ def train_one_epoch(
                     z = model(input)
                     target_one_hot = torch.nn.functional.one_hot(target, num_classes=args.num_classes).float()
                     loss, learnt_y = loss_fn(z, target_one_hot)
-                    # if batch_idx % 20 == 0:
-                    #     with torch.no_grad():
-                    #         # 1. Check the raw output range (Logits)
-                    #         output = z
-                    #         logit_min = output.min().item()
-                    #         logit_max = output.max().item()
+                    if batch_idx % 20 == 0:
+                        with torch.no_grad():
+                            # 1. Check the raw output range (Logits)
+                            output = z
+                            logit_min = output.min().item()
+                            logit_max = output.max().item()
                             
-                    #         # 2. Check the "Confidence Gap"
-                    #         # If this is small (< 1.0), the model is effectively guessing randomly
-                    #         probs = torch.softmax(output, dim=1)
-                    #         max_prob = probs.max(dim=1)[0].mean().item()
+                            # 2. Check the "Confidence Gap"
+                            # If this is small (< 1.0), the model is effectively guessing randomly
+                            probs = torch.softmax(output, dim=1)
+                            max_prob = probs.max(dim=1)[0].mean().item()
 
-                    #         print(f"\n--- [Batch {batch_idx}] Cosine Sim Diagnostics ---")
-                    #         print(f"Logit Range: [{logit_min:.4f}, {logit_max:.4f}]")
-                    #         print(f"Avg Max Confidence: {max_prob * 100:.2f}%")
+                            print(f"\n--- [Batch {batch_idx}] Cosine Sim Diagnostics ---")
+                            print(f"Logit Range: [{logit_min:.4f}, {logit_max:.4f}]")
+                            print(f"Avg Max Confidence: {max_prob * 100:.2f}%")
                 else:
                     output = model(input)
                     loss = loss_fn(output, target)
