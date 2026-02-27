@@ -541,6 +541,10 @@ def main():
         **factory_kwargs,
         **args.model_kwargs,
     )
+    # This will show the actual layers in the classifier
+    print(f"--- Classifier Structure ---")
+    print(model.classifier) # or model.fc depending on the timm version
+    print(model)
     if args.head_init_scale is not None:
         with torch.no_grad():
             model.get_classifier().weight.mul_(args.head_init_scale)
