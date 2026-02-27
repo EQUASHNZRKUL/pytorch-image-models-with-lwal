@@ -1214,9 +1214,9 @@ def train_one_epoch(
                             features = features.mean(dim=[2, 3])
                         feat_mag = torch.norm(features, dim=1).mean().item()
 
-                    print(f"--- Data Energy ---")
-                    print(f"Input Stats: Mean={input_mean:.4f}, Std={input_std:.4f}")
-                    print(f"Feature Magnitude (Pre-Head): {feat_mag:.4f}")
+                    # print(f"--- Data Energy ---")
+                    # print(f"Input Stats: Mean={input_mean:.4f}, Std={input_std:.4f}")
+                    # print(f"Feature Magnitude (Pre-Head): {feat_mag:.4f}")
                     z = model(input)
                     target_one_hot = torch.nn.functional.one_hot(target, num_classes=args.num_classes).float()
                     loss, learnt_y = loss_fn(z, target_one_hot)
