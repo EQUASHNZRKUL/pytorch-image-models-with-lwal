@@ -1150,6 +1150,8 @@ def train_one_epoch(
     # Print the type of the classifier head
     print(f"Model Classifier Type: {type(model.get_classifier())}")
 
+    print(f"Target Min: {target.min().item()}, Target Max: {target.max().item()}")
+
     # Check if the head has a 'scale' or 's' attribute
     head = model.get_classifier()
     if hasattr(head, 's'):
