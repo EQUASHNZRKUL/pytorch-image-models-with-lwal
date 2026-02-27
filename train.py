@@ -1371,7 +1371,7 @@ def validate(
     # input_losses_m = utils.AverageMeter()
     top1_m = utils.AverageMeter()
     top5_m = utils.AverageMeter()
-    num_classes = loss_fn.num_classes
+    num_classes = args.num_classes
     confmat_metric = ConfusionMatrix(task="multiclass", num_classes=num_classes).to(device)
 
     if training:
