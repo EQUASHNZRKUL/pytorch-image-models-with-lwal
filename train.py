@@ -1150,8 +1150,6 @@ def train_one_epoch(
     # Print the type of the classifier head
     print(f"Model Classifier Type: {type(model.get_classifier())}")
 
-    print(f"Target Min: {target.min().item()}, Target Max: {target.max().item()}")
-
     # Check if the head has a 'scale' or 's' attribute
     head = model.get_classifier()
     if hasattr(head, 's'):
@@ -1181,6 +1179,7 @@ def train_one_epoch(
     update_sample_count = 0
     learnt_y = None
     for batch_idx, (input, target) in enumerate(loader):
+        print(f"Target Min: {target.min().item()}, Target Max: {target.max().item()}")
         last_batch = batch_idx == last_batch_idx
         need_update = last_batch or (batch_idx + 1) % accum_steps == 0
         update_idx = batch_idx // accum_steps
