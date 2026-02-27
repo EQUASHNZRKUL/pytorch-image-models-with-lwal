@@ -543,7 +543,7 @@ def main():
     )
     # This will show the actual layers in the classifier
     print(f"--- Classifier Structure ---")
-    print(model.classifier) # or model.fc depending on the timm version
+    print(model.fc) # or model.fc depending on the timm version
     print(model)
     if args.head_init_scale is not None:
         with torch.no_grad():
