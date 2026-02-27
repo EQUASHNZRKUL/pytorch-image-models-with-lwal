@@ -1197,6 +1197,21 @@ def train_one_epoch(
             with amp_autocast(device_type=device.type, dtype=torch.bfloat16):
                 if args.lwal_loss:
                     # z = model.forward_features(input)
+                    # Check the "Energy" of the data entering the model
+                    input_mean = input.mean().item()
+                    input_std = input.std().item()
+
+                    # Check the "Energy" of the features before the head
+                    with torch.no_grad():
+                        # This captures the output of the Global Average Pooling layer
+                        features = model.forward_features(input)
+                        if len(features.shape) == 4:
+                            features = features.mean(dim=[2, 3])
+                        feat_mag = torch.norm(features, dim=1).mean().item()
+
+                    print(f"--- Data Energy [{dataset_name}] ---")
+                    print(f"Input Stats: Mean={input_mean:.4f}, Std={input_std:.4f}")
+                    print(f"Feature Magnitude (Pre-Head): {feat_mag:.4f}")
                     z = model(input)
                     target_one_hot = torch.nn.functional.one_hot(target, num_classes=args.num_classes).float()
                     loss, learnt_y = loss_fn(z, target_one_hot)
