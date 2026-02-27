@@ -1200,6 +1200,7 @@ def train_one_epoch(
                     # Check the "Energy" of the data entering the model
                     input_mean = input.mean().item()
                     input_std = input.std().item()
+                    feat_mag = 0.0
 
                     # Check the "Energy" of the features before the head
                     with torch.no_grad():
@@ -1209,7 +1210,7 @@ def train_one_epoch(
                             features = features.mean(dim=[2, 3])
                         feat_mag = torch.norm(features, dim=1).mean().item()
 
-                    print(f"--- Data Energy [{dataset_name}] ---")
+                    print(f"--- Data Energy ---")
                     print(f"Input Stats: Mean={input_mean:.4f}, Std={input_std:.4f}")
                     print(f"Feature Magnitude (Pre-Head): {feat_mag:.4f}")
                     z = model(input)
