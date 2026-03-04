@@ -1165,8 +1165,6 @@ def train_one_epoch(
     
     check_head_stats(model, args.dataset)
 
-check_head_stats(model, args.dataset)
-
     # Check if the head has a 'scale' or 's' attribute
     head = model.get_classifier()
     if hasattr(head, 's'):
