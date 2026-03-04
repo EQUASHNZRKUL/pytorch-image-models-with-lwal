@@ -544,7 +544,7 @@ def main():
     # This will show the actual layers in the classifier
     print(f"--- Classifier Structure ---")
     print(model.fc) # or model.fc depending on the timm version
-    print(model)
+    # print(model)
     if args.head_init_scale is not None:
         with torch.no_grad():
             model.get_classifier().weight.mul_(args.head_init_scale)
@@ -1149,6 +1149,23 @@ def train_one_epoch(
     # Sanity Check for CIFAR100 vs. Food101 discrepancy.
     # Print the type of the classifier head
     print(f"Model Classifier Type: {type(model.get_classifier())}")
+    # Add this to your train.py
+    print(f"--- [DEBUG] Model Origin ---")
+    print(f"Model Name: {args.model}")
+    print(f"Pretrained Flag: {args.pretrained}")
+    print(f"Checkpoint Path: {getattr(model, 'default_cfg', {}).get('url', 'Local/None')}")
+
+    def check_head_stats(m, name):
+        head = m.get_classifier()
+        weight = head.weight.data
+        print(f"--- [{name}] Head Stats ---")
+        print(f"Weight Mean: {weight.mean().item():.6f}")
+        print(f"Weight Std:  {weight.std().item():.6f}")
+        print(f"Weight Norm: {torch.norm(weight).item():.4f}")
+    
+    check_head_stats(model, args.dataset)
+
+check_head_stats(model, args.dataset)
 
     # Check if the head has a 'scale' or 's' attribute
     head = model.get_classifier()
